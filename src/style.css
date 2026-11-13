@@ -1,0 +1,107 @@
+@import 'tailwindcss';
+@plugin 'daisyui' {
+  themes: false;
+}
+
+@plugin 'daisyui/theme' {
+  name: 'light';
+  default: true;
+  color-scheme: light;
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(97% 0 0);
+  --color-base-300: oklch(94% 0 0);
+  --color-base-content: oklch(0% 0 0);
+  --color-primary: oklch(15.906% 0 0);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(21.455% 0.001 17.278);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(26.861% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(0% 0 0);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(100% 0 0);
+  --color-success: oklch(52% 0.154 150.069);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(90% 0.182 98.111);
+  --color-warning-content: oklch(0% 0 0);
+  --color-error: oklch(57% 0.245 27.325);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 2rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin 'daisyui/theme' {
+  name: 'dark';
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: oklch(0% 0 0);
+  --color-base-200: oklch(19% 0 0);
+  --color-base-300: oklch(22% 0 0);
+  --color-base-content: oklch(100% 0 0);
+  --color-primary: oklch(35% 0 0);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(35% 0 0);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(35% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(35% 0 0);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(100% 0 0);
+  --color-success: oklch(51.975% 0.176 142.495);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(96.798% 0.211 109.769);
+  --color-warning-content: oklch(0% 0 0);
+  --color-error: oklch(62.795% 0.257 29.233);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 2rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* "Bubble" corner: three rounded corners, a nearly square bottom-left one. */
+@utility rounded-bubble {
+  border-radius: var(--bubble-r, 0.75rem) var(--bubble-r, 0.75rem) var(--bubble-r, 0.75rem)
+    calc(var(--bubble-r, 0.75rem) / 6);
+}
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    font-optical-sizing: auto;
+    font-family: Inter, sans-serif;
+  }
+  .font-mono,
+  .font-mono * {
+    font-family: var(--font-mono);
+  }
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+}
+
+.btn:not(.btn-circle) {
+  --bubble-r: 0.5rem;
+  border-start-start-radius: var(--join-ss, var(--bubble-r));
+  border-start-end-radius: var(--join-se, var(--bubble-r));
+  border-end-end-radius: var(--join-ee, var(--bubble-r));
+  border-end-start-radius: var(--join-es, calc(var(--bubble-r) / 6));
+}
