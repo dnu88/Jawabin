@@ -207,8 +207,10 @@ Urutan menurut manfaat:
 4. **Webhook keluar**: tabel `webhooks` dan `webhook_logs`; kirim event komentar setelah `handleComment`.
 5. **API Publik** dan **Developer** (OAuth untuk pihak ketiga): paling besar, kerjakan terakhir atau tunda.
 
-Halaman yang belum disambungkan sebaiknya disembunyikan dari `src/menu.js` saat `authEnabled`, supaya pengguna
-tidak melihat data tiruan seolah-olah nyata.
+Halaman yang belum disambungkan **sudah disembunyikan** dari menu pengaturan saat `authEnabled`:
+`src/menu.js` → `visibleSettingItems(true)` hanya menyisakan Profil dan AI, sementara mode demo tetap
+menampilkan ketiga belas halaman. Tesnya di `tests/unit/menu.test.js`; rute lama masih bisa dibuka
+langsung, jadi saat menyambungkan satu halaman, pindahkan key-nya keluar dari `mockSettingKeys`.
 
 ### 5. Paket dan pembayaran
 

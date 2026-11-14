@@ -76,3 +76,15 @@ export const helpLinks = [
   { key: 'community', path: '#community', icon: 'mingcute:telegram-line' },
   { key: 'changelog', path: '#changelog', icon: 'mingcute:history-line' },
 ]
+
+// Settings pages that still render mock data (PLAN.md step 4). While a real
+// session is active they are hidden from the settings menu, so demo rows never
+// look like the signed-in user's own data. Demo mode keeps showing all of them.
+export const mockSettingKeys = [
+  'session', 'activity', 'twofactor', 'transaction', 'notification',
+  'api', 'developer', 'webhook', 'tikwm', 'redeem', 'connected_app',
+]
+
+export function visibleSettingItems(signedIn = false) {
+  return signedIn ? settingItems.filter((item) => !mockSettingKeys.includes(item.key)) : settingItems
+}

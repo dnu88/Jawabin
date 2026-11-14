@@ -74,6 +74,12 @@ test.describe('demo mode', () => {
     }
   })
 
+  test('demo mode still shows every settings page', async ({ page }) => {
+    await page.goto('/user/setting')
+    const links = page.locator('nav a[href^="/user/setting/"]')
+    await expect(links).toHaveCount(13)
+  })
+
   test('no horizontal scroll on a phone-sized viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     for (const route of ['/user/comment', '/user/setting/ai', '/user/account']) {

@@ -3,15 +3,18 @@ import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { t } from '../i18n'
-import { settingItems, helpLinks } from '../menu'
+import { settingItems, visibleSettingItems, helpLinks } from '../menu'
+import { authEnabled } from '../auth'
 
 const route = useRoute()
 const router = useRouter()
 
+const items = computed(() => visibleSettingItems(authEnabled))
+
 const groups = computed(() =>
   ['account', 'preference', 'integration'].map((key) => ({
     key,
-    items: settingItems.filter((item) => item.group == key),
+    items: items.value.filter((item) => item.group == key),
   })),
 )
 
@@ -21,7 +24,8 @@ const isActive = (path) => route.path.startsWith(path)
 // On desktop the index has nothing to show, so open the first setting.
 function openFirst() {
   if (!isIndex.value || !window.matchMedia('(min-width: 1024px)').matches) return
-  router.replace(settingItems[0].path)
+  const first = items.value[0] || settingItems[0]
+  router.replace(first.path)
 }
 
 // Escape goes back to the menu, unless the user is typing or a dialog is open.
