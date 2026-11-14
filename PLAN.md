@@ -75,12 +75,27 @@ Akun Operator, Riset TikTok/Threads, Affiliate, Upgrade dan pembayaran, platform
 
 ## Yang sudah dan belum diuji
 
-Sudah diuji (Playwright + skrip Node, dijalankan manual; **skripnya tidak ada di repo**):
+Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di repo**, lihat `tests/`):
 
 - Semua halaman tampil tanpa error di desktop (1440px) dan mobile, bahasa ID dan EN, tanpa scroll horizontal.
 - Alur mode demo: simpan, hapus dengan konfirmasi, filter, cari, salin, modal, Escape.
 - Logika server secara lokal: `/health`, 401 tanpa token, 404, verifikasi webhook, penolakan tanda tangan salah,
   state OAuth palsu dan kedaluwarsa, enkripsi bolak-balik, `matchRule`, `checkEndpoint`.
+
+Tes otomatis di repo (sejak langkah 1 di bawah):
+
+```
+npm test          # Vitest, 79 tes unit, ~1 detik
+npm run test:e2e  # Playwright, mode demo (tanpa kredensial apa pun)
+```
+
+`npm test` mencakup `server/http.js` (pagination, `json`, `env`), `crypto.js` (AES-GCM bolak-balik,
+tamper, kunci salah, state OAuth kedaluwarsa/palsu), `ai.js` (`checkEndpoint` menolak http/localhost/
+IP privat), `db.js` (`requireUser` 401 dan terjemahan error), `autoreply.js` (`matchRule`), router
+`api/index.js` (dispatch `__path`, 401/404, `:id`, body JSON), `webhook.js` (tanda tangan benar/salah,
+duplikat `23505`, komentar sendiri, akun tak dikenal) dan validasi rute `rules`/`comments`.
+`test:e2e` membuka semua rute mode demo, memastikan tidak ada error konsol dan tidak ada scroll
+horizontal di 390px. Keduanya berjalan di `.github/workflows/test.yml` pada setiap push dan PR.
 
 Belum pernah dijalankan:
 
@@ -105,6 +120,10 @@ Belum pernah dijalankan:
    Base URL Sumopod dan Z.ai di `server/ai.js` juga belum diverifikasi.
 7. **Hak cipta.** Tata letak dan teks antarmuka sangat dekat dengan Repliz. Sebelum rilis publik, teks di
    `src/locales/*.json` dan desainnya sebaiknya ditulis ulang.
+8. **Kegagalan simpan komentar ditelan.** Di `server/routes/webhook.js`, error selain duplikat dari
+   `insert` hanya di-`console.error` lalu webhook tetap menjawab 200 — Meta tidak akan mengirim ulang,
+   jadi komentar bisa hilang tanpa jejak. Tes `tests/unit/webhook.test.js` mengunci perilaku ini apa
+   adanya; putuskan apakah mau dibiarkan (200) atau dibuat 500 agar Meta mencoba lagi.
 
 ## Konvensi
 
@@ -143,11 +162,17 @@ Butuh pemilik repo: ikuti `SETUP.md` (Supabase, variabel Vercel, aplikasi Meta d
 - Selesai bila: daftar dan login berhasil; simpan pengaturan AI berhasil dan tercatat di riwayat; akun Instagram
   tester terhubung; komentar dari akun lain muncul di halaman Komentar dan terbalas oleh aturan kata kunci dan aturan AI.
 
-### 1. Tes otomatis di repo
+### 1. Tes otomatis di repo — **selesai (lokal)**
 
-- Tambahkan Vitest. Pindahkan pengujian logika server (crypto, `matchRule`, `checkEndpoint`, router, webhook) ke `tests/`.
-- Tambahkan satu tes Playwright mode demo yang membuka semua rute dan memastikan tidak ada error konsol.
-- Selesai bila: `npm test` lolos dan dijalankan di GitHub Actions pada setiap push.
+- Vitest ditambahkan (`vitest.config.js`, `tests/setup.js`), 79 tes unit di `tests/unit/`.
+- Playwright ditambahkan (`playwright.config.js`, `tests/e2e/demo.spec.js`) untuk mode demo.
+- `npm test` dan `npm run test:e2e` tersedia; `.github/workflows/test.yml` menjalankan keduanya.
+- Selesai bila: `npm test` lolos dan dijalankan di GitHub Actions pada setiap push. **Sisa satu hal:**
+  pastikan workflow hijau pada push pertama (butuh akses repo; belum bisa diverifikasi dari sini).
+
+**Catatan lingkungan:** Vite 7 butuh Node 20.19+ / 22.12+; repo di VPS ini dijalankan dengan Node 26
+dari toolchain Hermes. Playwright lokal memakai Chrome sistem (`PLAYWRIGHT_CHANNEL=chrome`), di CI
+memakai Chromium yang diunduh.
 
 ### 2. Dashboard
 

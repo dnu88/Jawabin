@@ -1,0 +1,184 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// The Supabase client is faked; the signature check, the skip rules and the
+// duplicate handling in server/routes/webhook.js are the real code under test.
+const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [] }))
+
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: () => ({ from: (table) => state.client.from(table), auth: { getUser: async () => ({}) } }),
+}))
+vi.mock('../../server/autoreply.js', () => ({
+  autoReply: async (...args) => state.autoReply.push(args),
+}))
+
+const { receiveWebhook, verifyWebhook } = await import('../../server/routes/webhook.js')
+const { hmac } = await import('../../server/crypto.js')
+
+const SECRET = process.env.INSTAGRAM_APP_SECRET
+const VERIFY = process.env.META_VERIFY_TOKEN
+
+function fakeClient({ account = { id: 'acc-1', user_id: 'user-1', platform: 'instagram', platform_user_id: '17841400000000000' }, insertError = null, inserted = { id: 'comment-1' } } = {}) {
+  const chain = (table) => {
+    const query = {
+      table,
+      select: () => query,
+      eq: () => query,
+      order: () => query,
+      limit: () => query,
+      range: () => query,
+      maybeSingle: async () => ({ data: table === 'accounts' ? account : null, error: null }),
+      single: async () => ({ data: inserted, error: insertError }),
+      insert: (rows) => {
+        state.inserts.push({ table, rows })
+        return query
+      },
+      update: () => query,
+      upsert: () => query,
+      delete: () => query,
+    }
+    return query
+  }
+  return { from: chain }
+}
+
+const payload = (over = {}) => ({
+  object: 'instagram',
+  entry: [
+    {
+      id: '17841400000000000',
+      time: 1700000000,
+      changes: [
+        {
+          field: 'comments',
+          value: {
+            id: 'comment-abc',
+            text: 'Berapa harganya?',
+            media: { id: 'media-1' },
+            from: { id: '999', username: 'pembeli' },
+          },
+          ...over,
+        },
+      ],
+    },
+  ],
+})
+
+function signedPost(body, { signature = true, secret = SECRET } = {}) {
+  const raw = JSON.stringify(body)
+  const headers = { 'content-type': 'application/json' }
+  if (signature) headers['x-hub-signature-256'] = `sha256=${hmac(secret, raw)}`
+  return new Request('https://jawabin.test/api/webhook/meta', { method: 'POST', headers, body: raw })
+}
+
+beforeEach(() => {
+  state.inserts = []
+  state.autoReply = []
+  state.client = fakeClient()
+})
+
+describe('verifyWebhook (GET handshake)', () => {
+  it('echoes hub.challenge when mode and token match', async () => {
+    const url = new URL(`https://jawabin.test/api/webhook/meta?hub.mode=subscribe&hub.verify_token=${VERIFY}&hub.challenge=challenge-123`)
+    const response = verifyWebhook(url)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe('challenge-123')
+  })
+
+  it('refuses a wrong token or wrong mode', async () => {
+    const wrongToken = new URL('https://jawabin.test/api/webhook/meta?hub.mode=subscribe&hub.verify_token=nope&hub.challenge=x')
+    expect(() => verifyWebhook(wrongToken)).toThrowError(/verification failed/)
+    const wrongMode = new URL(`https://jawabin.test/api/webhook/meta?hub.mode=unsubscribe&hub.verify_token=${VERIFY}`)
+    expect(() => verifyWebhook(wrongMode)).toThrowError(/verification failed/)
+  })
+})
+
+describe('receiveWebhook (POST)', () => {
+  it('rejects a missing or wrong signature', async () => {
+    await expect(receiveWebhook(signedPost(payload(), { signature: false }))).rejects.toThrowError(/bad signature/)
+    await expect(receiveWebhook(signedPost(payload(), { secret: 'other-secret' }))).rejects.toThrowError(/bad signature/)
+    expect(state.inserts).toHaveLength(0)
+  })
+
+  it('stores the comment and hands it to the auto reply engine', async () => {
+    const response = await receiveWebhook(signedPost(payload()))
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ ok: true })
+
+    expect(state.inserts).toHaveLength(1)
+    const row = state.inserts[0].rows
+    expect(row).toMatchObject({
+      user_id: 'user-1',
+      account_id: 'acc-1',
+      platform_comment_id: 'comment-abc',
+      media_id: 'media-1',
+      text: 'Berapa harganya?',
+      from_id: '999',
+      from_username: 'pembeli',
+    })
+    expect(state.autoReply).toHaveLength(1)
+    expect(state.autoReply[0][1]).toEqual({ id: 'comment-1' })
+  })
+
+  it('ignores a delivery Meta retried (duplicate platform id)', async () => {
+    state.client = fakeClient({ insertError: { code: '23505', message: 'duplicate key value' } })
+    const response = await receiveWebhook(signedPost(payload()))
+    expect(response.status).toBe(200)
+    expect(state.autoReply).toHaveLength(0)
+  })
+
+  it('never answers its own comment', async () => {
+    const body = payload()
+    body.entry[0].changes[0].value.from.id = '17841400000000000'
+    await receiveWebhook(signedPost(body))
+    expect(state.inserts).toHaveLength(0)
+    expect(state.autoReply).toHaveLength(0)
+  })
+
+  it('ignores comments for accounts that are not connected', async () => {
+    state.client = fakeClient({ account: null })
+    await receiveWebhook(signedPost(payload()))
+    expect(state.inserts).toHaveLength(0)
+  })
+
+  it('skips changes that are not comments and values without id or text', async () => {
+    const otherField = payload()
+    otherField.entry[0].changes[0].field = 'mentions'
+    await receiveWebhook(signedPost(otherField))
+
+    const noText = payload()
+    delete noText.entry[0].changes[0].value.text
+    await receiveWebhook(signedPost(noText))
+
+    expect(state.inserts).toHaveLength(0)
+  })
+
+  it('answers 200 for a non-instagram object without touching the database', async () => {
+    const response = await receiveWebhook(signedPost({ object: 'page', entry: [] }))
+    expect(await response.json()).toEqual({ ok: true })
+    expect(state.inserts).toHaveLength(0)
+  })
+
+  // Documents current behaviour, not ideal behaviour: a failed insert is logged
+  // and swallowed, so Meta still receives 200 and will NOT retry the delivery.
+  // If that is undesirable, let the error escape and return 500 instead.
+  it('swallows a failed insert, answers 200 and logs it', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.client = fakeClient({ insertError: { code: '42P01', message: 'relation "comments" does not exist' } })
+    const response = await receiveWebhook(signedPost(payload()))
+    expect(response.status).toBe(200)
+    expect(spy.mock.calls[0][0]).toBe('comment failed')
+    expect(spy.mock.calls[0][1]).toMatch(/does not exist/)
+    spy.mockRestore()
+  })
+
+  it('keeps going when one entry fails, so the rest of the batch is still handled', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const body = payload()
+    body.entry.push(JSON.parse(JSON.stringify(body.entry[0])))
+    state.client = fakeClient({ insertError: { code: '42P01', message: 'boom' } })
+    const response = await receiveWebhook(signedPost(body))
+    expect(response.status).toBe(200)
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+  })
+})
