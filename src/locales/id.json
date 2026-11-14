@@ -1,0 +1,914 @@
+{
+  "activity": {
+    "title": "Log Aktivitas",
+    "hintOperator": "Apa saja yang Anda lakukan di Jawabin",
+    "empty": "Belum ada aktivitas",
+    "ttl": "Disimpan 90 hari. Sesi yang dibuka tim support Jawabin tidak dicatat.",
+    "account": {
+      "all": "Semua",
+      "owner": "Akun utama"
+    },
+    "role": {
+      "owner": "Akun utama",
+      "operator": "Operator"
+    },
+    "day": {
+      "today": "Hari ini",
+      "yesterday": "Kemarin"
+    },
+    "method": {
+      "password": "password"
+    },
+    "source": {
+      "web": "Aplikasi",
+      "api": "API",
+      "ai_assistant": "AI Assistant",
+      "oauth": "Aplikasi terhubung"
+    },
+    "status": {
+      "success": "Berhasil",
+      "failed": "Gagal"
+    },
+    "period": {
+      "1": "24 jam",
+      "7": "7 hari",
+      "30": "30 hari",
+      "all": "90 hari"
+    },
+    "filter": {
+      "button": "Filter",
+      "title": "Filter Aktivitas",
+      "all": "Semua",
+      "account": "Akun",
+      "period": "Periode",
+      "module": "Menu",
+      "source": "Dilakukan lewat",
+      "status": "Status"
+    },
+    "info": {
+      "error": "Error",
+      "actor": "Dilakukan oleh",
+      "device": "Perangkat",
+      "ip": "Alamat IP",
+      "endpoint": "Endpoint",
+      "time": "Waktu"
+    },
+    "value": {
+      "yes": "Ya",
+      "no": "Tidak",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "ignored": "Diabaikan",
+      "active": "Aktif",
+      "paused": "Dijeda"
+    },
+    "detail": {
+      "tag": "Tag",
+      "name": "Nama",
+      "tags": "Tag",
+      "text": "Teks",
+      "status": "Status",
+      "stage": "Tahap",
+      "at": "Follow-up pada",
+      "email": "Email",
+      "menus": "Menu",
+      "accounts": "Akun",
+      "type": "Tipe",
+      "model": "Model",
+      "provided": "Token Jawabin",
+      "scheduleAt": "Dijadwalkan",
+      "plan": "Paket",
+      "month": "Bulan",
+      "balance": "Saldo",
+      "value": "Jumlah",
+      "approved": "Diizinkan",
+      "scope": "Scope"
+    },
+    "module": {
+      "menu": "Membuka menu",
+      "auth": "Masuk",
+      "account": "Akun",
+      "comment": "Komentar",
+      "chat": "Percakapan",
+      "contact": "Kontak",
+      "content": "Konten Live",
+      "schedule": "Jadwal",
+      "automation": "Automasi",
+      "comment_sync": "Sinkronisasi komentar",
+      "template": "Template",
+      "report": "Laporan",
+      "storage": "Storage",
+      "pinterest_board": "Board Pinterest",
+      "operator": "Operator",
+      "ai_assistant": "AI Assistant",
+      "session": "Sesi",
+      "setting": "Pengaturan",
+      "webhook": "Webhook",
+      "billing": "Pembayaran",
+      "oauth": "Login dengan Jawabin"
+    },
+    "menu": {
+      "dashboard": "Dashboard",
+      "upgrade": "Upgrade",
+      "affiliate": "Afiliasi",
+      "invoice": "Invoice",
+      "setting_profile": "Setting · Profil",
+      "setting_session": "Setting · Sesi",
+      "setting_twofactor": "Setting · 2FA",
+      "setting_transaction": "Setting · Transaksi",
+      "setting_notification": "Setting · Notifikasi",
+      "setting_webhook": "Setting · Webhook",
+      "setting_tikwm": "Setting · TikWM key",
+      "setting_redeem": "Setting · Redeem",
+      "setting_activity": "Setting · Log Aktivitas",
+      "setting_developer": "Setting · Developer",
+      "setting_connected_app": "Setting · Aplikasi Terhubung"
+    },
+    "event": {
+      "menu_access": "Membuka {menu}",
+      "auth_login": "Masuk dengan {method}",
+      "auth_login_failed": "Gagal masuk dengan {method}",
+      "auth_logout": "Keluar",
+      "auth_verify_twofactor": "Memasukkan kode 2FA",
+      "account_connect": "Menghubungkan akun {platform}",
+      "account_reconnect": "Menghubungkan ulang akun {platform}",
+      "account_delete": "Menghapus akun",
+      "account_update_automation": "Mengubah automasi akun",
+      "account_update_tag": "Mengubah tag akun",
+      "account_rename_tag": "Mengganti nama tag akun",
+      "account_remove_tag": "Menghapus tag akun",
+      "comment_reply": "Membalas komentar",
+      "comment_update_status": "Mengubah status komentar",
+      "comment_delete": "Menghapus komentar",
+      "chat_send_message": "Mengirim pesan",
+      "contact_update": "Mengubah kontak",
+      "contact_set_follow_up": "Memasang follow-up",
+      "contact_remove_follow_up": "Menghapus follow-up",
+      "contact_delete": "Menghapus kontak",
+      "content_comment": "Berkomentar di postingan",
+      "content_message_comment": "Mengirim DM ke pemberi komentar",
+      "content_like_comment": "Menyukai komentar",
+      "content_delete": "Menghapus postingan",
+      "content_delete_comment": "Menghapus komentar di postingan",
+      "schedule_create": "Membuat jadwal",
+      "schedule_update": "Mengubah jadwal",
+      "schedule_retry": "Mencoba ulang jadwal",
+      "schedule_delete": "Menghapus jadwal",
+      "schedule_delete_many": "Menghapus {count} jadwal",
+      "automation_create": "Memasang automasi postingan",
+      "automation_update": "Mengubah automasi postingan",
+      "automation_delete": "Menghapus automasi postingan",
+      "comment_sync_create": "Memulai sinkronisasi komentar",
+      "comment_sync_update_status": "Menjeda atau melanjutkan sinkronisasi komentar",
+      "comment_sync_delete": "Menghapus sinkronisasi komentar",
+      "template_create": "Membuat template automasi",
+      "template_update": "Mengubah template automasi",
+      "template_delete": "Menghapus template automasi",
+      "report_retry": "Mencoba ulang laporan",
+      "storage_upload": "Mengunggah file",
+      "storage_delete": "Menghapus file",
+      "storage_delete_many": "Menghapus {count} file",
+      "pinterest_board_create": "Membuat board Pinterest",
+      "pinterest_board_update": "Mengubah board Pinterest",
+      "pinterest_board_delete": "Menghapus board Pinterest",
+      "operator_create": "Menambah operator",
+      "operator_update": "Mengubah operator",
+      "operator_update_password": "Mengganti password operator",
+      "operator_delete": "Menghapus operator",
+      "ai_assistant_delete_conversation": "Menghapus chat AI Assistant",
+      "session_delete": "Mengeluarkan sesi",
+      "setting_update_profile": "Mengubah profil",
+      "setting_update_password": "Mengganti password",
+      "setting_update_notification": "Mengubah notifikasi",
+      "setting_regenerate_api_key": "Membuat API key baru",
+      "setting_update_tikwm": "Mengubah TikWM key",
+      "setting_update_ai": "Mengubah pengaturan AI",
+      "setting_verify_phone": "Memverifikasi nomor HP",
+      "setting_enable_twofactor": "Menyalakan 2FA",
+      "setting_disable_twofactor": "Mematikan 2FA",
+      "webhook_update": "Mengubah webhook",
+      "webhook_retry": "Mengirim ulang webhook",
+      "billing_redeem": "Menukarkan kode",
+      "billing_buy_plan": "Memulai pembelian paket",
+      "billing_buy_ai_balance": "Memulai pembelian saldo AI",
+      "billing_buy_addon_account": "Memulai pembelian add-on akun",
+      "billing_buy_addon_operator": "Memulai pembelian add-on operator",
+      "billing_buy_addon_twitter": "Memulai pembelian add-on X (Twitter)",
+      "billing_buy_addon_storage": "Memulai pembelian add-on storage",
+      "billing_cancel_transaction": "Membatalkan transaksi",
+      "oauth_create_app": "Membuat aplikasi Login dengan Jawabin",
+      "oauth_update_app": "Mengubah aplikasi Login dengan Jawabin",
+      "oauth_rotate_secret": "Membuat client secret aplikasi baru",
+      "oauth_delete_app": "Menghapus aplikasi Login dengan Jawabin",
+      "oauth_authorize": "Menjawab permintaan akses aplikasi",
+      "oauth_revoke": "Memutuskan aplikasi"
+    }
+  },
+  "ai": {
+    "title": "AI",
+    "form": {
+      "source": "Sumber",
+      "sourceHint": "Tempat balasan AI, filter AI dan deskripsi AI mendapat jawabannya.",
+      "own": {
+        "title": "API key sendiri",
+        "subtitle": "Bayar langsung ke penyedianya. Gemini, OpenAI, DeepSeek dan lainnya."
+      },
+      "provided": {
+        "title": "Token Jawabin",
+        "subtitle": "Tanpa key. Beli token dari Jawabin, berjalan di Gemini."
+      },
+      "key": "API key",
+      "alert": "Token hanya berlaku di Jawabin dan tidak menambah saldo OpenAI atau platform lain.",
+      "empty": "Saat saldo habis, balasan dan filter AI berhenti sampai kamu membeli lagi.",
+      "balance": "Saldo",
+      "tokens": "{n} token",
+      "buy": "Beli token",
+      "platform": "Penyedia",
+      "model": "Model",
+      "endpoint": "Endpoint",
+      "placeholder": {
+        "key": "Tempel API key kamu",
+        "model": "Ketik nama model atau pilih di bawah",
+        "endpoint": "https://…"
+      },
+      "getApiKey": "Buka key {provider}",
+      "show": "Tampilkan key",
+      "hide": "Sembunyikan key",
+      "test": "Saat disimpan, Jawabin mengirim satu request uji dengan key dan model ini. Ini memakai sedikit token dan muncul di riwayat.",
+      "toast": "Pengaturan AI tersimpan",
+      "button": "Simpan"
+    },
+    "summary": {
+      "title": "Token terpakai",
+      "subtitle": "Sejak awal, dari semua fitur AI.",
+      "total": "Total",
+      "validate": "Cek key",
+      "content": "Balasan, filter dan deskripsi",
+      "chat": "Balasan chat"
+    },
+    "history": {
+      "title": "Riwayat penggunaan",
+      "subtitle": "Setiap request AI dan token yang dipakai.",
+      "empty": "Belum ada request AI",
+      "tokens": "{n} token",
+      "input": "Input",
+      "output": "Output",
+      "raw": "Respons mentah",
+      "copy": "Salin JSON",
+      "copied": "JSON tersalin",
+      "model": "Model",
+      "none": "Tidak ada teks di respons ini"
+    }
+  },
+  "api": {
+    "title": "API Publik",
+    "form": {
+      "accessKey": "Access key",
+      "secretKey": "Secret key",
+      "keys": "Key",
+      "keysHint": "Pakai untuk memanggil Jawabin dari aplikasi atau server kamu. Jaga secret key tetap rahasia.",
+      "copy": "Salin",
+      "copied": "{label} tersalin",
+      "show": "Tampilkan secret key",
+      "hide": "Sembunyikan secret key",
+      "reset": "Reset",
+      "auth": "Kirim sebagai HTTP Basic auth: access key sebagai username dan secret key sebagai password.",
+      "example": "Contoh request"
+    },
+    "information": {
+      "title": "Menghubungkan akun sosial",
+      "subtitle": "Urutan request untuk menghubungkan akun lewat API tergantung platformnya.",
+      "one": {
+        "title": "Facebook, LinkedIn & YouTube",
+        "step": {
+          "one": {
+            "title": "Hit API Authorize",
+            "subtitle": "Dapatkan URL otorisasi."
+          },
+          "two": {
+            "title": "Arahkan Pengguna",
+            "subtitle": "Arahkan pengguna ke URL yang diberikan."
+          },
+          "three": {
+            "title": "Hit API Exchange",
+            "subtitle": "Ambil {code} lalu lakukan exchange."
+          },
+          "four": {
+            "title": "Ambil Data Entitas",
+            "subtitle": "Hit API Get Page, Organization, atau Channel."
+          },
+          "five": {
+            "title": "Selesaikan Koneksi",
+            "subtitle": "Hit API Connect atau Reconnect."
+          }
+        }
+      },
+      "two": {
+        "title": "Instagram, Threads & TikTok",
+        "step": {
+          "one": {
+            "title": "Hit API Authorize",
+            "subtitle": "Dapatkan URL otorisasi."
+          },
+          "two": {
+            "title": "Arahkan Pengguna",
+            "subtitle": "Arahkan pengguna ke URL yang diberikan."
+          },
+          "three": {
+            "title": "Koneksi Langsung",
+            "subtitle": "Ambil {code} dan langsung hit API Connect atau Reconnect."
+          }
+        }
+      }
+    },
+    "create": {
+      "message": "Kamu belum punya key. Buat sepasang untuk memanggil Jawabin sebagai operator ini, terpisah dari key pemilik akun.",
+      "button": "Buat key",
+      "toast": "Key berhasil dibuat"
+    },
+    "reset": {
+      "title": "Reset secret key?",
+      "message": "Aplikasi yang memakai secret key sekarang berhenti bekerja sampai kamu memberinya key yang baru.",
+      "toast": "Secret key berhasil direset"
+    },
+    "plan": {
+      "title": "Endpoint di paketmu",
+      "subtitle": "Endpoint di luar paketmu menjawab 402 sampai kamu upgrade."
+    },
+    "reference": {
+      "title": "Referensi API",
+      "subtitle": "Semua endpoint beserta parameter dan responsnya.",
+      "json": "OpenAPI JSON",
+      "open": "Buka di tab baru"
+    }
+  },
+  "connectedApp": {
+    "title": "Aplikasi Terhubung",
+    "ttl": "Aplikasi yang tidak dipakai lagi terputus sendiri setelah 30 hari.",
+    "verified": "Terverifikasi",
+    "mainAccount": "Akun Utama",
+    "operator": "Operator",
+    "active": "Aktif {time}",
+    "disconnect": "Putuskan",
+    "empty": {
+      "title": "Belum ada aplikasi terhubung",
+      "message": "Aplikasi yang kamu izinkan lewat Login dengan Jawabin muncul di sini, jadi kamu bisa memutuskannya kapan saja."
+    },
+    "alert": {
+      "title": "Putuskan aplikasi ini?",
+      "message": "{name} langsung kehilangan akses ke akun Jawabin kamu. Aplikasi harus meminta izin lagi untuk terhubung."
+    },
+    "toast": "Aplikasi diputuskan",
+    "section": {
+      "profile": "Profil",
+      "account": "Akun",
+      "comment": "Komentar",
+      "contact": "Kontak",
+      "addon": "Add-on",
+      "schedule": "Jadwal",
+      "chat": "Percakapan",
+      "content": "Live Content",
+      "research": "Riset",
+      "report": "Laporan",
+      "automation": "Automasi",
+      "listener": "Sinkron komentar",
+      "template": "Template",
+      "storage": "Storage"
+    },
+    "unverified": "Belum diverifikasi"
+  },
+  "developer": {
+    "title": "Developer",
+    "create": "Aplikasi baru",
+    "list": "Aplikasi kamu",
+    "copy": "Salin",
+    "copied": "{label} disalin",
+    "edit": "Ubah",
+    "verified": "Terverifikasi",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "noSecret": "Aplikasi publik tidak punya secret. Aplikasi ini membuktikan dirinya dengan PKCE.",
+    "empty": {
+      "title": "Belum ada aplikasi",
+      "message": "Buat aplikasi agar orang bisa masuk ke produkmu dengan akun Jawabin mereka dan memakai Public API atas nama mereka."
+    },
+    "type": {
+      "confidential": {
+        "label": "Confidential",
+        "hint": "Punya server yang menyimpan client secret, seperti aplikasi web dengan backend."
+      },
+      "public": {
+        "label": "Public",
+        "hint": "Berjalan di tempat yang tidak bisa menyembunyikan secret: browser, aplikasi mobile, atau desktop. Hanya memakai PKCE."
+      }
+    },
+    "endpoint": {
+      "title": "Login dengan Jawabin",
+      "subtitle": "OAuth 2.0 dengan PKCE. Access token berupa JWT untuk Public API lewat Authorization: Bearer.",
+      "authorize": "Halaman izin",
+      "token": "Token",
+      "revoke": "Revoke",
+      "profile": "Get Me",
+      "hint": "Access token berlaku 1 jam, refresh token 30 hari sejak terakhir dipakai. Scope mengikuti menu Public API.",
+      "docs": "Panduan"
+    },
+    "form": {
+      "title": {
+        "create": "Aplikasi Baru",
+        "edit": "Ubah Aplikasi"
+      },
+      "name": {
+        "label": "Nama",
+        "placeholder": "Aplikasiku",
+        "hint": "Ditampilkan ke pengguna di halaman izin.",
+        "required": "Nama wajib diisi"
+      },
+      "description": {
+        "label": "Deskripsi (opsional)",
+        "placeholder": "Apa yang dilakukan aplikasi ini dengan Jawabin"
+      },
+      "website": {
+        "label": "Website (opsional)"
+      },
+      "logo": {
+        "label": "URL logo (opsional)"
+      },
+      "type": "Jenis aplikasi",
+      "redirect": {
+        "label": "Redirect URI",
+        "add": "Tambah redirect URI",
+        "remove": "Hapus",
+        "hint": "Dicocokkan persis. Pakai https, http hanya untuk localhost, atau skema aplikasi seperti com.example.app:/callback.",
+        "required": "Tambahkan minimal satu redirect URI"
+      },
+      "button": {
+        "cancel": "Batal",
+        "create": "Buat",
+        "save": "Simpan"
+      },
+      "toast": {
+        "create": "Aplikasi dibuat",
+        "update": "Aplikasi disimpan"
+      }
+    },
+    "secret": {
+      "title": "Client Secret",
+      "warning": "Salin client secret sekarang. Jawabin hanya menyimpan sidik jarinya, jadi secret ini tidak bisa ditampilkan lagi.",
+      "done": "Sudah kusalin"
+    },
+    "rotate": {
+      "button": "Secret baru",
+      "title": "Buat client secret baru?",
+      "message": "Secret yang sekarang langsung tidak berlaku, jadi perbarui servermu dengan yang baru. Pengguna yang sudah terhubung tetap terhubung."
+    },
+    "remove": {
+      "button": "Hapus",
+      "title": "Hapus aplikasi ini?",
+      "message": "Semua yang terhubung ke {name} akan diputus dan tokennya langsung tidak berlaku.",
+      "toast": "Aplikasi dihapus"
+    },
+    "unverified": "Belum diverifikasi",
+    "verify": {
+      "hint": "Pengguna melihat peringatan di halaman izin sampai Jawabin memverifikasi aplikasi ini. Kirim permintaan ke CS; tim kami akan memeriksa aplikasi dan website-nya.",
+      "button": "Ajukan verifikasi",
+      "message": "Halo Jawabin, saya ingin mengajukan verifikasi aplikasi Login dengan Jawabin.\n\nAplikasi: {name}\nClient ID: {clientId}\nWebsite: {website}\nAkun Jawabin: {email}"
+    },
+    "disabled": {
+      "badge": "Dinonaktifkan",
+      "title": "Jawabin menonaktifkan aplikasi ini",
+      "message": "Semua yang terhubung sudah diputus, dan aplikasi ini tidak bisa lagi dipakai untuk login. Aplikasi ini tidak bisa diubah atau dihapus.",
+      "reason": "Alasan: {reason}",
+      "button": "Hubungi CS",
+      "support": "Halo Jawabin, aplikasi Login dengan Jawabin saya dinonaktifkan dan saya ingin tahu lebih lanjut.\n\nAplikasi: {name}\nClient ID: {clientId}\nAkun Jawabin: {email}"
+    }
+  },
+  "setting": {
+    "menu": {
+      "profile": "Profil",
+      "session": "Sesi",
+      "twofactor": "2FA",
+      "transaction": "Transaksi",
+      "notification": "Notifikasi",
+      "ai": "AI",
+      "api": "API Publik",
+      "webhook": "Webhook",
+      "tikwm": "Key TikWM",
+      "redeem": "Redeem",
+      "activity": "Log Aktivitas",
+      "connected_app": "Aplikasi Terhubung",
+      "developer": "Developer"
+    },
+    "link": {
+      "tutorial": "Tutorial",
+      "documentation": "Dokumentasi",
+      "customerService": "Customer Service",
+      "community": "Komunitas",
+      "changelog": "Changelog"
+    },
+    "back": "Kembali ke pengaturan",
+    "pick": "Pilih pengaturan di sebelah kiri.",
+    "locked": "Tidak tersedia untuk operator",
+    "group": {
+      "account": "Akun",
+      "preference": "Preferensi",
+      "integration": "Integrasi",
+      "help": "Bantuan"
+    },
+    "hint": {
+      "profile": "Nama, nomor HP, password dan paket",
+      "session": "Perangkat yang masuk ke akunmu",
+      "transaction": "Pembayaran dan invoice",
+      "redeem": "Pakai kode promo atau hadiah",
+      "notification": "Hal yang diberitahukan Jawabin",
+      "ai": "API key AI sendiri atau token Jawabin",
+      "api": "Key untuk API publik",
+      "webhook": "Event yang dikirim ke servermu",
+      "tikwm": "Key yang dipakai riset TikTok",
+      "activity": "Apa saja yang Anda dan operator lakukan",
+      "connected_app": "Aplikasi yang kamu izinkan memakai akunmu",
+      "developer": "Aplikasi yang memakai Login dengan Jawabin"
+    },
+    "twofactor": {
+      "title": "2FA",
+      "alert": "Saat aktif, masuk dengan email atau Google juga meminta kode 6 digit dari aplikasi autentikator.",
+      "operator": "Operator masuk dengan password masing-masing dan tidak diminta kode ini.",
+      "status": {
+        "on": "Aktif",
+        "off": "Nonaktif"
+      },
+      "on": {
+        "title": "2FA aktif",
+        "subtitle": "Saat masuk, kamu diminta kode dari aplikasi autentikator."
+      },
+      "off": {
+        "title": "2FA nonaktif",
+        "subtitle": "Saat masuk, cukup pakai password."
+      },
+      "step": {
+        "scan": {
+          "title": "Pindai kode QR",
+          "subtitle": "Buka Google Authenticator, Microsoft Authenticator, Authy, 1Password atau aplikasi lain yang mendukung TOTP, lalu pindai kode ini.",
+          "again": "Kode QR baru menggantikan yang lama, jadi pindai yang terbaru."
+        },
+        "code": {
+          "title": "Masukkan kode",
+          "subtitle": "Ketik kode 6 digit yang muncul di aplikasi untuk Jawabin."
+        }
+      },
+      "button": {
+        "remove": "Nonaktifkan",
+        "generate": "Tampilkan kode QR",
+        "regenerate": "Kode QR baru",
+        "verify": "Aktifkan"
+      },
+      "form": {
+        "code": {
+          "label": "Kode",
+          "placeholder": "000000"
+        }
+      },
+      "remove": {
+        "title": "Nonaktifkan 2FA?",
+        "message": "Saat masuk, kamu cukup pakai password lagi."
+      },
+      "toast": {
+        "saved": "2FA aktif",
+        "removed": "2FA nonaktif"
+      }
+    }
+  },
+  "notification": {
+    "title": "Notifikasi",
+    "email": "Email dikirim ke {email}.",
+    "channel": "Email",
+    "section": {
+      "affiliate": {
+        "title": "Komisi affiliate",
+        "subtitle": "Saat kamu mendapat komisi dari orang yang kamu ajak."
+      },
+      "expired": {
+        "title": "Paket akan berakhir",
+        "subtitle": "Dua hari sebelum paketmu berakhir."
+      },
+      "transaction": {
+        "title": "Pembayaran berhasil",
+        "subtitle": "Saat pembayaran paket, add-on atau token AI berhasil."
+      },
+      "account": {
+        "title": "Slot akun hampir habis",
+        "subtitle": "Saat sisa slot akun 15 atau kurang. Hanya untuk paket dengan lebih dari 15 slot."
+      }
+    },
+    "toast": "Preferensi tersimpan"
+  },
+  "profile": {
+    "title": "Pengaturan Profil",
+    "section": {
+      "phoneNumber": "Nomor Telepon",
+      "password": "Ubah Password",
+      "plan": "Paket",
+      "alert": "Verifikasi nomor telepon dan dapatkan akses selama 7 hari ke paket Premium"
+    },
+    "verify": {
+      "title": "Verifikasi Nomor Telepon",
+      "form": {
+        "country": {
+          "label": "Kode Negara",
+          "validation": {
+            "required": "Kode negara wajib diisi",
+            "numeric": "Kode negara harus berupa angka"
+          }
+        },
+        "phone": {
+          "label": "Nomor Telepon",
+          "placeholder": "Masukan nomor telepon",
+          "validation": {
+            "required": "Nomor telepon wajib diisi",
+            "numeric": "Nomor telepon harus berupa angka"
+          },
+          "alert": {
+            "title": "Tidak Membuka Tab?",
+            "subtitle": "Klik {button} untuk membuka jendela pesan guna menerima OTP",
+            "here": "di sini"
+          }
+        },
+        "code": {
+          "label": "Kode",
+          "placeholder": "Masukan kode",
+          "validation": {
+            "required": "Kode wajib diisi",
+            "numeric": "Kode harus berupa angka",
+            "length": "Kode harus berupa 6 angka"
+          }
+        }
+      },
+      "button": {
+        "cancel": "Batal",
+        "send": "Kirim Kode",
+        "verify": "Verifikasi"
+      },
+      "toast": {
+        "verify": "Nomor telepon berhasil diverifikasi"
+      }
+    },
+    "password": {
+      "title": "Ubah Password",
+      "form": {
+        "password": {
+          "label": "Password Baru",
+          "placeholder": "Masukan password baru",
+          "validation": {
+            "required": "Password wajib diisi"
+          }
+        }
+      },
+      "button": {
+        "cancel": "Batal",
+        "save": "Simpan"
+      },
+      "toast": "Password berhasil diubah"
+    },
+    "addon": {
+      "information": "Limit Add-on Anda akan direset jika paket Gold tidak aktif selama 30 hari berturut-turut."
+    },
+    "storage": {
+      "information": "Limit Storage akan direset ketika paket kamu berakhir dan akan otomatis dihapus setelah 90 hari setelah diunggah."
+    },
+    "twitter": {
+      "post": "Post"
+    },
+    "phone": {
+      "verified": "Terverifikasi",
+      "verify": "Verifikasi",
+      "none": "Belum ada nomor HP"
+    },
+    "passwordHint": "Password untuk masuk dengan email.",
+    "change": "Ubah",
+    "plan": {
+      "free": "Paket gratis",
+      "until": "Aktif sampai {date}",
+      "left": "{count} hari lagi",
+      "expired": "Berakhir pada {date}",
+      "upgrade": "Upgrade",
+      "extend": "Perpanjang"
+    },
+    "addonTitle": "Add-on",
+    "addonRows": {
+      "account": "Slot akun",
+      "operator": "Slot operator",
+      "storage": "Storage",
+      "twitter": "Kredit X (Twitter)",
+      "reset": "Limit direset pada"
+    },
+    "emailHint": "Kamu masuk dengan email ini. Email tidak bisa diubah di sini.",
+    "operatorHint": "Operator dari {owner}. Email hanya bisa diubah oleh pemilik akun."
+  },
+  "redeem": {
+    "title": "Tukarkan kode",
+    "subtitle": "Kode menambah masa aktif paket.",
+    "label": "Kode",
+    "placeholder": "XXXXXXXX",
+    "button": "Tukarkan",
+    "current": "Paketmu: {plan}",
+    "until": "aktif sampai {date}",
+    "free": "Paket Free",
+    "note": {
+      "time": "Waktu ditambahkan di atas sisa masa aktif paketmu.",
+      "dynamic": "Beberapa kode memperpanjang paket yang kamu pakai sekarang, jadi butuh paket berbayar.",
+      "once": "Setiap kode hanya bisa dipakai sekali per akun.",
+      "affiliate": "Kode affiliate hanya bisa dipakai sekali per akun dan menjadikan pemilik kode sebagai referral kamu."
+    },
+    "question": {
+      "text": "Ada masalah dengan kode?",
+      "action": "Hubungi CS"
+    },
+    "error": {
+      "invalid": "Kode tidak ditemukan. Periksa lalu coba lagi.",
+      "used": "Kamu sudah pernah memakai kode ini.",
+      "plan": "Kode ini memperpanjang paketmu sekarang, jadi butuh paket berbayar.",
+      "own": "Ini kode affiliate milikmu sendiri, jadi tidak bisa dipakai.",
+      "referred": "Kamu sudah jadi referral affiliate lain, jadi kode ini tidak berlaku untukmu.",
+      "affiliateUsed": "Kamu sudah pernah memakai kode affiliate. Setiap akun hanya bisa memakai satu.",
+      "higher": "Paketmu sekarang lebih tinggi dari paket kode ini, jadi kode tidak bisa dipakai."
+    },
+    "toast": "Kode berhasil dipakai: paket {plan} sampai {date}"
+  },
+  "session": {
+    "title": "Sesi",
+    "empty": "Tidak Ditemukan Sesi",
+    "section": {
+      "mainAccount": "Akun Utama",
+      "operator": "Operator"
+    },
+    "alert": {
+      "title": "Keluarkan sesi ini?",
+      "message": "Ini perangkat yang sedang kamu pakai, jadi kamu akan keluar dari Jawabin.",
+      "other": "Perangkat itu akan langsung keluar dari Jawabin."
+    },
+    "toast": "Sesi berhasil dikeluarkan",
+    "current": "Perangkat ini",
+    "admin": "Akses admin",
+    "signOut": "Keluar",
+    "ttl": "Sesi keluar otomatis setelah 7 hari tanpa aktivitas.",
+    "on": "{browser} di {os}",
+    "unknown": "Perangkat tidak dikenal",
+    "active": "Aktif {time}"
+  },
+  "tikwm": {
+    "title": "Key TikWM",
+    "form": {
+      "title": "Key",
+      "subtitle": "Riset TikTok mengirim setiap pencarian lewat key ini.",
+      "apiKey": {
+        "label": "API key",
+        "placeholder": "Tempel API key TikWM kamu",
+        "validation": {
+          "required": "API key wajib diisi"
+        }
+      },
+      "check": "Saat disimpan, key dicek dulu ke TikWM.",
+      "saved": "Tersimpan",
+      "missing": "Belum diisi",
+      "show": "Tampilkan key",
+      "hide": "Sembunyikan key",
+      "research": "Buka riset TikTok",
+      "button": "Simpan"
+    },
+    "info": {
+      "title": "Cara mendapatkan key",
+      "point": {
+        "one": "Buka {link}",
+        "two": "Masuk atau buat akun",
+        "three": "Buka menu API Keys",
+        "four": "Buat key baru",
+        "five": "Salin lalu tempel di atas"
+      }
+    },
+    "toast": "Key TikWM tersimpan"
+  },
+  "transaction": {
+    "title": "Transaksi",
+    "search": "Cari ID transaksi",
+    "empty": "Belum ada transaksi",
+    "detail": {
+      "title": "Detail transaksi",
+      "id": "ID Transaksi",
+      "created": "Dibuat",
+      "item": "Item",
+      "quantity": "Jumlah",
+      "method": "Pembayaran",
+      "coupon": "Kupon",
+      "rupiah": "Dalam rupiah"
+    },
+    "invoice": {
+      "invoice": "Invoice",
+      "date": "Tanggal",
+      "billTo": "Ditagih Ke",
+      "description": "Deskripsi",
+      "amount": "Total",
+      "period": "Periode",
+      "balance": "Saldo Token",
+      "credit": "Kredit",
+      "addon": "Addon",
+      "month": "Bulan",
+      "account": "Akun",
+      "operator": "Operator",
+      "storage": "Storage",
+      "twitter": "X (Twitter)",
+      "limit": "Limit",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "download": "Unduh PDF"
+    },
+    "button": {
+      "invoice": "Invoice",
+      "pay": "Bayar"
+    },
+    "emptyHint": "Pembelian paket, add-on dan token AI muncul di sini.",
+    "noResult": "Tidak ada transaksi yang cocok dengan “{search}”",
+    "expire": "Transaksi yang belum dibayar otomatis dibatalkan 1 jam setelah dibuat.",
+    "status": {
+      "paid": "Lunas",
+      "unpaid": "Belum dibayar",
+      "canceled": "Dibatalkan"
+    },
+    "name": {
+      "plan": "Paket {plan}",
+      "token": "Token AI",
+      "addon": "Add-on"
+    },
+    "quantity": {
+      "plan": "{n} bulan",
+      "token": "{n} token",
+      "account": "{n} slot akun",
+      "operator": "{n} slot operator",
+      "storage": "Penyimpanan {n} GB",
+      "twitter": "{n} kredit X"
+    },
+    "payBefore": "bayar sebelum {time}",
+    "method": {
+      "paypal": "PayPal",
+      "duitku": "Duitku"
+    }
+  },
+  "webhook": {
+    "title": "Webhook",
+    "form": {
+      "title": "Endpoint",
+      "subtitle": "Jawabin mengirim POST berisi JSON ke setiap URL ini untuk setiap event.",
+      "alert": "Setiap token dikirim di header x-token URL-nya masing-masing, jadi server kamu bisa memastikan request datang dari Jawabin.",
+      "url": {
+        "label": "URL",
+        "placeholder": "https://server-kamu.com/jawabin"
+      },
+      "token": {
+        "label": "Token",
+        "placeholder": "Rahasia yang dicek server kamu"
+      },
+      "show": "Tampilkan token",
+      "hide": "Sembunyikan token",
+      "add": "Tambah URL",
+      "remove": "Hapus URL",
+      "duplicate": "Setiap URL hanya bisa ditambahkan sekali",
+      "test": "Saat disimpan, Jawabin mengirim event uji ke setiap URL. Semuanya harus menjawab dengan status 2xx, kalau tidak pengaturan tidak tersimpan. Hapus semua URL untuk berhenti mengirim.",
+      "example": {
+        "title": "Payload",
+        "subtitle": "Setiap event punya bentuk yang sama.",
+        "fields": {
+          "platform": "instagram, facebook, threads, tiktok, linkedin, atau jawabin untuk jadwal",
+          "type": "comment, chat atau schedule",
+          "accountId": "Akun Jawabin pemilik event",
+          "data": "Komentar, pesan atau hasil jadwal",
+          "raw": "Hanya comment dan chat: event persis seperti yang dikirim platform"
+        },
+        "type": {
+          "schedule": "Jadwal",
+          "comment": "Komentar",
+          "chat": "Chat"
+        },
+        "copy": "Salin",
+        "copied": "Contoh tersalin"
+      },
+      "toast": "Webhook tersimpan",
+      "button": "Simpan"
+    },
+    "history": {
+      "title": "Riwayat pengiriman",
+      "subtitle": "Setiap event yang dikirim ke URL kamu. Kirim ulang memakai URL yang sama, dengan token yang tersimpan sekarang.",
+      "filter": "Filter berdasarkan URL",
+      "all": "Semua URL",
+      "empty": "Belum ada yang dikirim",
+      "status": {
+        "success": "Terkirim",
+        "error": "Gagal",
+        "process": "Mengirim"
+      },
+      "retry": "Kirim ulang",
+      "payload": "Payload",
+      "copy": "Salin JSON",
+      "copied": "JSON tersalin",
+      "toast": "Webhook berhasil dikirim ulang",
+      "failed": "Sudah dikirim ulang, tapi gagal: {message}"
+    }
+  }
+}

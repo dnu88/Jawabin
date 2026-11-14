@@ -1,0 +1,914 @@
+{
+  "activity": {
+    "title": "Activity Log",
+    "hintOperator": "What you did in Jawabin",
+    "empty": "No activity yet",
+    "ttl": "Kept for 90 days. Sessions opened by Jawabin support aren't recorded.",
+    "account": {
+      "all": "Everyone",
+      "owner": "Main account"
+    },
+    "role": {
+      "owner": "Main account",
+      "operator": "Operator"
+    },
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "method": {
+      "password": "a password"
+    },
+    "source": {
+      "web": "App",
+      "api": "API",
+      "ai_assistant": "AI Assistant",
+      "oauth": "Connected app"
+    },
+    "status": {
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "period": {
+      "1": "24 hours",
+      "7": "7 days",
+      "30": "30 days",
+      "all": "90 days"
+    },
+    "filter": {
+      "button": "Filter",
+      "title": "Filter Activity",
+      "all": "All",
+      "account": "Account",
+      "period": "Period",
+      "module": "Menu",
+      "source": "Done through",
+      "status": "Status"
+    },
+    "info": {
+      "error": "Error",
+      "actor": "Done by",
+      "device": "Device",
+      "ip": "IP address",
+      "endpoint": "Endpoint",
+      "time": "Time"
+    },
+    "value": {
+      "yes": "Yes",
+      "no": "No",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "ignored": "Ignored",
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "detail": {
+      "tag": "Tag",
+      "name": "Name",
+      "tags": "Tags",
+      "text": "Text",
+      "status": "Status",
+      "stage": "Stage",
+      "at": "Follow up at",
+      "email": "Email",
+      "menus": "Menus",
+      "accounts": "Accounts",
+      "type": "Type",
+      "model": "Model",
+      "provided": "Jawabin tokens",
+      "scheduleAt": "Scheduled at",
+      "plan": "Plan",
+      "month": "Months",
+      "balance": "Balance",
+      "value": "Amount",
+      "approved": "Allowed",
+      "scope": "Scopes"
+    },
+    "module": {
+      "menu": "Menu opened",
+      "auth": "Sign in",
+      "account": "Accounts",
+      "comment": "Comments",
+      "chat": "Conversations",
+      "contact": "Contacts",
+      "content": "Live Content",
+      "schedule": "Schedule",
+      "automation": "Automation",
+      "comment_sync": "Comment sync",
+      "template": "Templates",
+      "report": "Reports",
+      "storage": "Storage",
+      "pinterest_board": "Pinterest boards",
+      "operator": "Operators",
+      "ai_assistant": "AI Assistant",
+      "session": "Sessions",
+      "setting": "Settings",
+      "webhook": "Webhook",
+      "billing": "Billing",
+      "oauth": "Login with Jawabin"
+    },
+    "menu": {
+      "dashboard": "Dashboard",
+      "upgrade": "Upgrade",
+      "affiliate": "Affiliate",
+      "invoice": "Invoice",
+      "setting_profile": "Setting · Profile",
+      "setting_session": "Setting · Session",
+      "setting_twofactor": "Setting · 2FA",
+      "setting_transaction": "Setting · Transaction",
+      "setting_notification": "Setting · Notification",
+      "setting_webhook": "Setting · Webhook",
+      "setting_tikwm": "Setting · TikWM key",
+      "setting_redeem": "Setting · Redeem",
+      "setting_activity": "Setting · Activity Log",
+      "setting_developer": "Setting · Developer",
+      "setting_connected_app": "Setting · Connected Apps"
+    },
+    "event": {
+      "menu_access": "Opened {menu}",
+      "auth_login": "Signed in with {method}",
+      "auth_login_failed": "Failed to sign in with {method}",
+      "auth_logout": "Signed out",
+      "auth_verify_twofactor": "Entered the 2FA code",
+      "account_connect": "Connected a {platform} account",
+      "account_reconnect": "Reconnected a {platform} account",
+      "account_delete": "Deleted an account",
+      "account_update_automation": "Changed an account's automation",
+      "account_update_tag": "Changed an account's tags",
+      "account_rename_tag": "Renamed an account tag",
+      "account_remove_tag": "Removed an account tag",
+      "comment_reply": "Replied to a comment",
+      "comment_update_status": "Changed a comment's status",
+      "comment_delete": "Deleted a comment",
+      "chat_send_message": "Sent a message",
+      "contact_update": "Updated a contact",
+      "contact_set_follow_up": "Set a follow-up",
+      "contact_remove_follow_up": "Removed a follow-up",
+      "contact_delete": "Deleted a contact",
+      "content_comment": "Commented on a post",
+      "content_message_comment": "Sent a DM to a commenter",
+      "content_like_comment": "Liked a comment",
+      "content_delete": "Deleted a post",
+      "content_delete_comment": "Deleted a comment on a post",
+      "schedule_create": "Created a schedule",
+      "schedule_update": "Edited a schedule",
+      "schedule_retry": "Retried a schedule",
+      "schedule_delete": "Deleted a schedule",
+      "schedule_delete_many": "Deleted {count} schedule | Deleted {count} schedules",
+      "automation_create": "Set up a post automation",
+      "automation_update": "Edited a post automation",
+      "automation_delete": "Deleted a post automation",
+      "comment_sync_create": "Started a comment sync",
+      "comment_sync_update_status": "Paused or resumed a comment sync",
+      "comment_sync_delete": "Deleted a comment sync",
+      "template_create": "Created an automation template",
+      "template_update": "Edited an automation template",
+      "template_delete": "Deleted an automation template",
+      "report_retry": "Retried a report",
+      "storage_upload": "Uploaded a file",
+      "storage_delete": "Deleted a file",
+      "storage_delete_many": "Deleted {count} file | Deleted {count} files",
+      "pinterest_board_create": "Created a Pinterest board",
+      "pinterest_board_update": "Edited a Pinterest board",
+      "pinterest_board_delete": "Deleted a Pinterest board",
+      "operator_create": "Added an operator",
+      "operator_update": "Edited an operator",
+      "operator_update_password": "Changed an operator's password",
+      "operator_delete": "Deleted an operator",
+      "ai_assistant_delete_conversation": "Deleted an AI Assistant chat",
+      "session_delete": "Signed out a session",
+      "setting_update_profile": "Updated the profile",
+      "setting_update_password": "Changed the password",
+      "setting_update_notification": "Changed the notifications",
+      "setting_regenerate_api_key": "Made a new API key",
+      "setting_update_tikwm": "Changed the TikWM key",
+      "setting_update_ai": "Changed the AI settings",
+      "setting_verify_phone": "Verified a phone number",
+      "setting_enable_twofactor": "Turned on 2FA",
+      "setting_disable_twofactor": "Turned off 2FA",
+      "webhook_update": "Changed the webhooks",
+      "webhook_retry": "Resent a webhook",
+      "billing_redeem": "Redeemed a code",
+      "billing_buy_plan": "Started a plan purchase",
+      "billing_buy_ai_balance": "Started an AI balance purchase",
+      "billing_buy_addon_account": "Started an account add-on purchase",
+      "billing_buy_addon_operator": "Started an operator add-on purchase",
+      "billing_buy_addon_twitter": "Started an X (Twitter) add-on purchase",
+      "billing_buy_addon_storage": "Started a storage add-on purchase",
+      "billing_cancel_transaction": "Canceled a transaction",
+      "oauth_create_app": "Created a Login with Jawabin app",
+      "oauth_update_app": "Edited a Login with Jawabin app",
+      "oauth_rotate_secret": "Made a new app client secret",
+      "oauth_delete_app": "Deleted a Login with Jawabin app",
+      "oauth_authorize": "Answered an app access request",
+      "oauth_revoke": "Disconnected an app"
+    }
+  },
+  "ai": {
+    "title": "AI",
+    "form": {
+      "source": "Source",
+      "sourceHint": "Where AI replies, AI filters and AI captions get their answers.",
+      "own": {
+        "title": "Your own API key",
+        "subtitle": "Pay the provider directly. Gemini, OpenAI, DeepSeek and more."
+      },
+      "provided": {
+        "title": "Jawabin tokens",
+        "subtitle": "No key needed. Buy tokens from Jawabin, it runs on Gemini."
+      },
+      "key": "API key",
+      "alert": "Tokens only work on Jawabin and don't add balance to OpenAI or other platforms.",
+      "empty": "When the balance reaches 0, AI replies and filters stop until you buy more.",
+      "balance": "Balance",
+      "tokens": "{n} tokens",
+      "buy": "Buy tokens",
+      "platform": "Provider",
+      "model": "Model",
+      "endpoint": "Endpoint",
+      "placeholder": {
+        "key": "Paste your API key",
+        "model": "Type a model name or pick one below",
+        "endpoint": "https://…"
+      },
+      "getApiKey": "Open your {provider} keys",
+      "show": "Show key",
+      "hide": "Hide key",
+      "test": "Saving sends one short test request with this key and model. It uses a few tokens and shows up in the history.",
+      "toast": "AI settings saved",
+      "button": "Save"
+    },
+    "summary": {
+      "title": "Tokens used",
+      "subtitle": "All time, across every AI feature.",
+      "total": "Total",
+      "validate": "Key checks",
+      "content": "Replies, filters and captions",
+      "chat": "Chat replies"
+    },
+    "history": {
+      "title": "Usage history",
+      "subtitle": "Each AI request and the tokens it used.",
+      "empty": "No AI requests yet",
+      "tokens": "{n} tokens",
+      "input": "Input",
+      "output": "Output",
+      "raw": "Raw response",
+      "copy": "Copy JSON",
+      "copied": "JSON copied",
+      "model": "Model",
+      "none": "No text in this response"
+    }
+  },
+  "api": {
+    "title": "Public API",
+    "form": {
+      "accessKey": "Access key",
+      "secretKey": "Secret key",
+      "keys": "Keys",
+      "keysHint": "Use them to call Jawabin from your own app or server. Keep the secret key private.",
+      "copy": "Copy",
+      "copied": "{label} copied",
+      "show": "Show secret key",
+      "hide": "Hide secret key",
+      "reset": "Reset",
+      "auth": "Send them as HTTP Basic auth: the access key is the username and the secret key is the password.",
+      "example": "Example request"
+    },
+    "information": {
+      "title": "Connecting a social account",
+      "subtitle": "The order of calls to connect an account through the API depends on the platform.",
+      "one": {
+        "title": "Facebook, LinkedIn & YouTube",
+        "step": {
+          "one": {
+            "title": "Hit API Authorize",
+            "subtitle": "Get the authorization URL."
+          },
+          "two": {
+            "title": "Redirect User",
+            "subtitle": "Navigate user to the provided URL."
+          },
+          "three": {
+            "title": "Hit API Exchange",
+            "subtitle": "Extract the {code} and exchange it."
+          },
+          "four": {
+            "title": "Fetch Entities",
+            "subtitle": "Hit API Get Page, Organization, or Channel."
+          },
+          "five": {
+            "title": "Finalize Connection",
+            "subtitle": "Hit API Connect or Reconnect."
+          }
+        }
+      },
+      "two": {
+        "title": "Instagram, Threads & TikTok",
+        "step": {
+          "one": {
+            "title": "Hit API Authorize",
+            "subtitle": "Get the authorization URL."
+          },
+          "two": {
+            "title": "Redirect User",
+            "subtitle": "Navigate user to the provided URL."
+          },
+          "three": {
+            "title": "Direct Connection",
+            "subtitle": "Extract the {code} and directly hit API Connect or Reconnect."
+          }
+        }
+      }
+    },
+    "create": {
+      "message": "You don't have keys yet. Create a pair to call Jawabin as this operator, separate from the owner's keys.",
+      "button": "Create keys",
+      "toast": "Keys created"
+    },
+    "reset": {
+      "title": "Reset the secret key?",
+      "message": "Apps that use the current secret key stop working until you give them the new one.",
+      "toast": "Secret key reset"
+    },
+    "plan": {
+      "title": "Endpoints on your plan",
+      "subtitle": "Endpoints outside your plan answer 402 until you upgrade."
+    },
+    "reference": {
+      "title": "API reference",
+      "subtitle": "Every endpoint with its parameters and responses.",
+      "json": "OpenAPI JSON",
+      "open": "Open in a new tab"
+    }
+  },
+  "connectedApp": {
+    "title": "Connected Apps",
+    "ttl": "An app you stop using disconnects by itself after 30 days.",
+    "verified": "Verified",
+    "mainAccount": "Main Account",
+    "operator": "Operator",
+    "active": "Active {time}",
+    "disconnect": "Disconnect",
+    "empty": {
+      "title": "No connected apps",
+      "message": "Apps you allow with Login with Jawabin show up here, so you can disconnect them anytime."
+    },
+    "alert": {
+      "title": "Disconnect this app?",
+      "message": "{name} loses access to your Jawabin account right away. It has to ask again to reconnect."
+    },
+    "toast": "App disconnected",
+    "section": {
+      "profile": "Profile",
+      "account": "Accounts",
+      "comment": "Comments",
+      "contact": "Contacts",
+      "addon": "Add-ons",
+      "schedule": "Schedule",
+      "chat": "Conversations",
+      "content": "Live Content",
+      "research": "Research",
+      "report": "Reports",
+      "automation": "Automation",
+      "listener": "Comment sync",
+      "template": "Templates",
+      "storage": "Storage"
+    },
+    "unverified": "Unverified"
+  },
+  "developer": {
+    "title": "Developer",
+    "create": "New app",
+    "list": "Your apps",
+    "copy": "Copy",
+    "copied": "{label} copied",
+    "edit": "Edit",
+    "verified": "Verified",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "noSecret": "Public apps have no secret. They prove themselves with PKCE.",
+    "empty": {
+      "title": "No apps yet",
+      "message": "Create an app to let people sign in to your product with their Jawabin account and use the Public API on their behalf."
+    },
+    "type": {
+      "confidential": {
+        "label": "Confidential",
+        "hint": "Has a server that keeps the client secret, like a web app with a backend."
+      },
+      "public": {
+        "label": "Public",
+        "hint": "Runs where a secret can't stay hidden: a browser, mobile, or desktop app. Uses PKCE only."
+      }
+    },
+    "endpoint": {
+      "title": "Login with Jawabin",
+      "subtitle": "OAuth 2.0 with PKCE. Access tokens are JWTs for the Public API with Authorization: Bearer.",
+      "authorize": "Authorize page",
+      "token": "Token",
+      "revoke": "Revoke",
+      "profile": "Get Me",
+      "hint": "Access tokens last 1 hour, refresh tokens 30 days after their last use. Scopes follow the Public API menus.",
+      "docs": "Guide"
+    },
+    "form": {
+      "title": {
+        "create": "New App",
+        "edit": "Edit App"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "My App",
+        "hint": "Shown to people on the consent page.",
+        "required": "Name is required"
+      },
+      "description": {
+        "label": "Description (optional)",
+        "placeholder": "What the app does with Jawabin"
+      },
+      "website": {
+        "label": "Website (optional)"
+      },
+      "logo": {
+        "label": "Logo URL (optional)"
+      },
+      "type": "App type",
+      "redirect": {
+        "label": "Redirect URIs",
+        "add": "Add redirect URI",
+        "remove": "Remove",
+        "hint": "Matched exactly. Use https, http only for localhost, or an app scheme like com.example.app:/callback.",
+        "required": "Add at least one redirect URI"
+      },
+      "button": {
+        "cancel": "Cancel",
+        "create": "Create",
+        "save": "Save"
+      },
+      "toast": {
+        "create": "App created",
+        "update": "App saved"
+      }
+    },
+    "secret": {
+      "title": "Client Secret",
+      "warning": "Copy the client secret now. Jawabin keeps only a fingerprint of it, so it can't be shown again.",
+      "done": "I've copied it"
+    },
+    "rotate": {
+      "button": "New secret",
+      "title": "Make a new client secret?",
+      "message": "The current secret stops working right away, so update your server with the new one. People who connected stay connected."
+    },
+    "remove": {
+      "button": "Delete",
+      "title": "Delete this app?",
+      "message": "Everyone connected to {name} is disconnected and its tokens stop working right away.",
+      "toast": "App deleted"
+    },
+    "unverified": "Unverified",
+    "verify": {
+      "hint": "People see a warning on the consent page until Jawabin verifies the app. Send a request to customer service; they'll check the app and its website.",
+      "button": "Request verification",
+      "message": "Hello Jawabin, I'd like to request verification for my Login with Jawabin app.\n\nApp: {name}\nClient ID: {clientId}\nWebsite: {website}\nJawabin account: {email}"
+    },
+    "disabled": {
+      "badge": "Disabled",
+      "title": "Jawabin disabled this app",
+      "message": "Everyone connected to it was disconnected, and it can't sign people in anymore. It can't be changed or deleted.",
+      "reason": "Reason: {reason}",
+      "button": "Contact support",
+      "support": "Hello Jawabin, my Login with Jawabin app was disabled and I'd like to know more.\n\nApp: {name}\nClient ID: {clientId}\nJawabin account: {email}"
+    }
+  },
+  "setting": {
+    "menu": {
+      "profile": "Profile",
+      "session": "Session",
+      "twofactor": "2FA",
+      "transaction": "Transaction",
+      "notification": "Notification",
+      "ai": "AI",
+      "api": "Public API",
+      "webhook": "Webhook",
+      "tikwm": "TikWM key",
+      "redeem": "Redeem",
+      "activity": "Activity Log",
+      "connected_app": "Connected Apps",
+      "developer": "Developer"
+    },
+    "link": {
+      "tutorial": "Tutorial",
+      "documentation": "Documentation",
+      "customerService": "Customer Service",
+      "community": "Community",
+      "changelog": "Changelog"
+    },
+    "back": "Back to settings",
+    "pick": "Pick a setting on the left.",
+    "locked": "Not available for operators",
+    "group": {
+      "account": "Account",
+      "preference": "Preferences",
+      "integration": "Integrations",
+      "help": "Help"
+    },
+    "hint": {
+      "profile": "Name, phone number, password and plan",
+      "session": "Devices signed in to your account",
+      "transaction": "Payments and invoices",
+      "redeem": "Use a promo or gift code",
+      "notification": "What Jawabin tells you about",
+      "ai": "Your own AI key or Jawabin tokens",
+      "api": "Keys for the public API",
+      "webhook": "Events sent to your server",
+      "tikwm": "The key TikTok research runs on",
+      "activity": "What you and your operators did",
+      "connected_app": "Apps you allowed to use your account",
+      "developer": "Apps that sign people in with Jawabin"
+    },
+    "twofactor": {
+      "title": "2FA",
+      "alert": "When it's on, signing in with your email or Google also asks for a 6-digit code from an authenticator app.",
+      "operator": "Operators sign in with their own password and are not asked for this code.",
+      "status": {
+        "on": "On",
+        "off": "Off"
+      },
+      "on": {
+        "title": "2FA is on",
+        "subtitle": "Signing in asks for the code from your authenticator app."
+      },
+      "off": {
+        "title": "2FA is off",
+        "subtitle": "Signing in only needs your password."
+      },
+      "step": {
+        "scan": {
+          "title": "Scan the QR code",
+          "subtitle": "Open Google Authenticator, Microsoft Authenticator, Authy, 1Password or any app that supports TOTP and scan this code.",
+          "again": "A new QR code replaces the previous one, so scan the newest one."
+        },
+        "code": {
+          "title": "Enter the code",
+          "subtitle": "Type the 6-digit code the app shows for Jawabin."
+        }
+      },
+      "button": {
+        "remove": "Turn off",
+        "generate": "Show QR code",
+        "regenerate": "New QR code",
+        "verify": "Turn on"
+      },
+      "form": {
+        "code": {
+          "label": "Code",
+          "placeholder": "000000"
+        }
+      },
+      "remove": {
+        "title": "Turn off 2FA?",
+        "message": "Signing in will only need your password again."
+      },
+      "toast": {
+        "saved": "2FA is on",
+        "removed": "2FA is off"
+      }
+    }
+  },
+  "notification": {
+    "title": "Notifications",
+    "email": "Emails go to {email}.",
+    "channel": "Email",
+    "section": {
+      "affiliate": {
+        "title": "Affiliate commission",
+        "subtitle": "When you earn a commission from someone you referred."
+      },
+      "expired": {
+        "title": "Plan ending",
+        "subtitle": "Two days before your plan ends."
+      },
+      "transaction": {
+        "title": "Payment received",
+        "subtitle": "When a payment for a plan, add-on or AI tokens goes through."
+      },
+      "account": {
+        "title": "Account slots running low",
+        "subtitle": "When 15 or fewer account slots are left. Only for plans with more than 15 slots."
+      }
+    },
+    "toast": "Preferences saved"
+  },
+  "profile": {
+    "title": "Profile Setting",
+    "section": {
+      "phoneNumber": "Phone Number",
+      "password": "Change Password",
+      "plan": "Plan",
+      "alert": "Verify your phone number and get 7-day access to the Premium plan"
+    },
+    "verify": {
+      "title": "Verify Phone Number",
+      "form": {
+        "country": {
+          "label": "Country Code",
+          "validation": {
+            "required": "Country code is required",
+            "numeric": "Country code must be a numeric"
+          }
+        },
+        "phone": {
+          "label": "Phone",
+          "placeholder": "Enter phone",
+          "validation": {
+            "required": "Phone is required",
+            "numeric": "Phone must be a numeric"
+          },
+          "alert": {
+            "title": "Didn't open Window?",
+            "subtitle": "Click {button} to open the message window to receive the OTP",
+            "here": "here"
+          }
+        },
+        "code": {
+          "label": "Code",
+          "placeholder": "Enter code",
+          "validation": {
+            "required": "Code is required",
+            "numeric": "Code must be a numeric",
+            "length": "Code must be a 6 number"
+          }
+        }
+      },
+      "button": {
+        "cancel": "Cancel",
+        "send": "Send Code",
+        "verify": "Verify"
+      },
+      "toast": {
+        "verify": "The phone number has been successfully verified"
+      }
+    },
+    "password": {
+      "title": "Change Password",
+      "form": {
+        "password": {
+          "label": "New Password",
+          "placeholder": "Input new password",
+          "validation": {
+            "required": "Password is required"
+          }
+        }
+      },
+      "button": {
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "toast": "Password successfully changed"
+    },
+    "addon": {
+      "information": "Your Add-on limits will be reset if your Gold plan is inactive for 30 consecutive days."
+    },
+    "storage": {
+      "information": "The storage limit will be reset when your plan expires and will be automatically deleted 90 days after upload."
+    },
+    "twitter": {
+      "post": "Post"
+    },
+    "phone": {
+      "verified": "Verified",
+      "verify": "Verify",
+      "none": "No phone number yet"
+    },
+    "passwordHint": "The password for signing in with your email.",
+    "change": "Change",
+    "plan": {
+      "free": "Free plan",
+      "until": "Active until {date}",
+      "left": "{count} day left | {count} days left",
+      "expired": "Expired on {date}",
+      "upgrade": "Upgrade",
+      "extend": "Extend"
+    },
+    "addonTitle": "Add-ons",
+    "addonRows": {
+      "account": "Account slots",
+      "operator": "Operator slots",
+      "storage": "Storage",
+      "twitter": "X (Twitter) credits",
+      "reset": "Limits reset on"
+    },
+    "emailHint": "You sign in with this email. It can’t be changed here.",
+    "operatorHint": "Operator of {owner}. The email can only be changed by the account owner."
+  },
+  "redeem": {
+    "title": "Redeem a code",
+    "subtitle": "A code adds time to a plan.",
+    "label": "Code",
+    "placeholder": "XXXXXXXX",
+    "button": "Redeem",
+    "current": "Your plan: {plan}",
+    "until": "active until {date}",
+    "free": "Free plan",
+    "note": {
+      "time": "Time is added on top of what your plan has left.",
+      "dynamic": "Some codes extend the plan you have now, so they need a paid plan.",
+      "once": "Each code works once per account.",
+      "affiliate": "Affiliate codes work once per account and make the code's owner your referral."
+    },
+    "question": {
+      "text": "Problem with a code?",
+      "action": "Contact support"
+    },
+    "error": {
+      "invalid": "This code doesn't exist. Check it and try again.",
+      "used": "You've already used this code.",
+      "plan": "This code extends your current plan, so it needs a paid plan.",
+      "own": "This is your own affiliate code, so you can't redeem it.",
+      "referred": "You're already another affiliate's referral, so this code doesn't apply to you.",
+      "affiliateUsed": "You've already used an affiliate code. Each account can use only one.",
+      "higher": "Your current plan is higher than this code's plan, so it can't be used."
+    },
+    "toast": "Code applied: {plan} plan until {date}"
+  },
+  "session": {
+    "title": "Session",
+    "empty": "No Session Found",
+    "section": {
+      "mainAccount": "Main Account",
+      "operator": "Operator"
+    },
+    "alert": {
+      "title": "Sign out this session?",
+      "message": "This is the device you are using now, so you will be signed out of Jawabin.",
+      "other": "That device will be signed out of Jawabin right away."
+    },
+    "toast": "Session signed out",
+    "current": "This device",
+    "admin": "Admin access",
+    "signOut": "Sign out",
+    "ttl": "A session signs out by itself after 7 days without activity.",
+    "on": "{browser} on {os}",
+    "unknown": "Unknown device",
+    "active": "Active {time}"
+  },
+  "tikwm": {
+    "title": "TikWM key",
+    "form": {
+      "title": "Key",
+      "subtitle": "TikTok research sends every search through this key.",
+      "apiKey": {
+        "label": "API key",
+        "placeholder": "Paste your TikWM API key",
+        "validation": {
+          "required": "API key is required"
+        }
+      },
+      "check": "Saving checks the key with TikWM first.",
+      "saved": "Saved",
+      "missing": "Not set",
+      "show": "Show key",
+      "hide": "Hide key",
+      "research": "Open TikTok research",
+      "button": "Save"
+    },
+    "info": {
+      "title": "Getting a key",
+      "point": {
+        "one": "Go to {link}",
+        "two": "Sign in or create an account",
+        "three": "Open API Keys",
+        "four": "Create a new key",
+        "five": "Copy it and paste it above"
+      }
+    },
+    "toast": "TikWM key saved"
+  },
+  "transaction": {
+    "title": "Transactions",
+    "search": "Search transaction ID",
+    "empty": "No transactions yet",
+    "detail": {
+      "title": "Transaction detail",
+      "id": "Transaction ID",
+      "created": "Created",
+      "item": "Item",
+      "quantity": "Quantity",
+      "method": "Payment",
+      "coupon": "Coupon",
+      "rupiah": "In rupiah"
+    },
+    "invoice": {
+      "invoice": "Invoice",
+      "date": "Date",
+      "billTo": "Bill To",
+      "description": "Description",
+      "amount": "Amount",
+      "period": "Period",
+      "balance": "Balance Token",
+      "credit": "Credit",
+      "addon": "Addon",
+      "month": "Month",
+      "account": "Account",
+      "operator": "Operator",
+      "storage": "Storage",
+      "twitter": "X (Twitter)",
+      "limit": "Limit",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "download": "Download PDF"
+    },
+    "button": {
+      "invoice": "Invoice",
+      "pay": "Pay"
+    },
+    "emptyHint": "Plan, add-on and AI token purchases show up here.",
+    "noResult": "No transaction matches “{search}”",
+    "expire": "An unpaid transaction is canceled by itself 1 hour after it's made.",
+    "status": {
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "canceled": "Canceled"
+    },
+    "name": {
+      "plan": "{plan} plan",
+      "token": "AI tokens",
+      "addon": "Add-on"
+    },
+    "quantity": {
+      "plan": "{n} month | {n} months",
+      "token": "{n} tokens",
+      "account": "{n} account slot | {n} account slots",
+      "operator": "{n} operator slot | {n} operator slots",
+      "storage": "{n} GB storage",
+      "twitter": "{n} X credit | {n} X credits"
+    },
+    "payBefore": "pay before {time}",
+    "method": {
+      "paypal": "PayPal",
+      "duitku": "Duitku"
+    }
+  },
+  "webhook": {
+    "title": "Webhook",
+    "form": {
+      "title": "Endpoints",
+      "subtitle": "Jawabin sends a POST with a JSON body to each of these URLs for every event.",
+      "alert": "Each token goes in the x-token header of its own URL, so your server can check the request came from Jawabin.",
+      "url": {
+        "label": "URL",
+        "placeholder": "https://your-server.com/jawabin"
+      },
+      "token": {
+        "label": "Token",
+        "placeholder": "A secret your server checks"
+      },
+      "show": "Show token",
+      "hide": "Hide token",
+      "add": "Add URL",
+      "remove": "Remove URL",
+      "duplicate": "Each URL can only be added once",
+      "test": "Saving sends a test event to every URL. Each one has to answer with a 2xx status, or nothing is saved. Remove every URL to stop sending.",
+      "example": {
+        "title": "Payload",
+        "subtitle": "Every event has the same shape.",
+        "fields": {
+          "platform": "instagram, facebook, threads, tiktok, linkedin, or jawabin for schedules",
+          "type": "comment, chat or schedule",
+          "accountId": "The Jawabin account the event belongs to",
+          "data": "The comment, the message or the schedule result",
+          "raw": "Comment and chat only: the event as the platform sent it"
+        },
+        "type": {
+          "schedule": "Schedule",
+          "comment": "Comment",
+          "chat": "Chat"
+        },
+        "copy": "Copy",
+        "copied": "Example copied"
+      },
+      "toast": "Webhook saved",
+      "button": "Save"
+    },
+    "history": {
+      "title": "Delivery history",
+      "subtitle": "Every event sent to your URLs. Retry sends it again to the same URL, with the token saved now.",
+      "filter": "Filter by URL",
+      "all": "All URLs",
+      "empty": "Nothing sent yet",
+      "status": {
+        "success": "Delivered",
+        "error": "Failed",
+        "process": "Sending"
+      },
+      "retry": "Retry",
+      "payload": "Payload",
+      "copy": "Copy JSON",
+      "copied": "JSON copied",
+      "toast": "Webhook sent again",
+      "failed": "Sent again, but it failed: {message}"
+    }
+  }
+}

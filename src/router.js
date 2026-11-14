@@ -3,10 +3,26 @@ import { settingItems } from './menu'
 
 const Placeholder = () => import('./pages/Placeholder.vue')
 
+const settingPages = {
+  profile: () => import('./pages/setting/Profile.vue'),
+  session: () => import('./pages/setting/Session.vue'),
+  activity: () => import('./pages/setting/Activity.vue'),
+  twofactor: () => import('./pages/setting/TwoFactor.vue'),
+  transaction: () => import('./pages/setting/Transaction.vue'),
+  notification: () => import('./pages/setting/Notification.vue'),
+  ai: () => import('./pages/setting/AI.vue'),
+  api: () => import('./pages/setting/API.vue'),
+  developer: () => import('./pages/setting/Developer.vue'),
+  webhook: () => import('./pages/setting/Webhook.vue'),
+  tikwm: () => import('./pages/setting/Tikwm.vue'),
+  redeem: () => import('./pages/setting/Redeem.vue'),
+  connected_app: () => import('./pages/setting/ConnectedApp.vue'),
+}
+
 const settingChildren = settingItems.map((item) => ({
   path: item.path.replace('/user/setting/', ''),
   name: `user-setting-${item.key}`,
-  component: item.key == 'ai' ? () => import('./pages/setting/AI.vue') : Placeholder,
+  component: settingPages[item.key],
   meta: { settingKey: item.key },
 }))
 

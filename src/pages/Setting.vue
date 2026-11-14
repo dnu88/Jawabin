@@ -27,7 +27,7 @@ function openFirst() {
 // Escape goes back to the menu, unless the user is typing or a dialog is open.
 function onKeydown(event) {
   if (event.key != 'Escape' || event.defaultPrevented) return
-  if (document.querySelector('dialog[open], [role="alertdialog"]')) return
+  if (document.querySelector('dialog[open], [role="dialog"], [role="alertdialog"]')) return
   if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
   router.push('/user/setting')
 }
