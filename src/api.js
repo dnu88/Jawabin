@@ -5,9 +5,10 @@
 // State lives in localStorage so the page behaves end to end without a server.
 import { reactive } from 'vue'
 import { authEnabled, updatePassword } from './auth'
+import { request } from './server'
 
 const KEY = 'jawabin-mock'
-const VERSION = 3
+const VERSION = 4
 export const API_BASE = 'https://api.jawabin.example'
 const wait = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -108,6 +109,17 @@ function seed() {
     webhooks: [{ url: 'https://toko.example.com/hooks/jawabin', token: 'rahasia-toko' }],
     webhookLogs: seedWebhookLogs(),
     activities: seedActivities(),
+    accounts: [{ _id: 'acc1', platform: 'instagram', username: 'toko.contoh', name: 'Toko Contoh', picture: '', createdAt: hoursAgo(240) }],
+    rules: [
+      { _id: 'r1', accountId: '', name: 'Tanya harga', type: 'keyword', keywords: ['harga', 'price', 'berapa'], reply: 'Halo kak! Harganya Rp149.000, sudah termasuk ongkir se-Jawa ya 😊', prompt: '', isActive: true },
+      { _id: 'r2', accountId: '', name: 'Balasan AI umum', type: 'ai', keywords: [], reply: '', prompt: 'Toko buka 09.00–21.00 WIB. Bisa COD. Jawab singkat dan ramah.', isActive: false },
+    ],
+    comments: [
+      { _id: 'k1', accountId: 'acc1', from: 'pembeli_satu', text: 'Harganya berapa kak?', status: 'resolved', replyText: 'Halo kak! Harganya Rp149.000, sudah termasuk ongkir se-Jawa ya 😊', repliedBy: 'rule', error: '', createdAt: hoursAgo(0.4) },
+      { _id: 'k2', accountId: 'acc1', from: 'budi.santoso', text: 'Ready stok warna hitam?', status: 'pending', replyText: '', repliedBy: '', error: '', createdAt: hoursAgo(1.2) },
+      { _id: 'k3', accountId: 'acc1', from: 'siti_rahma', text: 'Bisa kirim ke Makassar?', status: 'pending', replyText: '', repliedBy: '', error: 'AI is not set up yet', createdAt: hoursAgo(3) },
+      { _id: 'k4', accountId: 'acc1', from: 'promo.murah99', text: 'Cek bio kami untuk promo!', status: 'ignored', replyText: '', repliedBy: '', error: '', createdAt: hoursAgo(9) },
+    ],
     apps: [
       {
         _id: 'a1', name: 'Toko Dashboard', description: 'Dasbor internal untuk memantau komentar toko.', website: 'https://toko.example.com', logo: '',
@@ -258,7 +270,20 @@ export async function redeemCode(code) {
   return { data: { plan: db.plan, expiredAt: db.expiredAt } }
 }
 
-export async function updateAi({ type, url, model, token, isProvided }) {
+export async function loadAi() {
+  if (!authEnabled) return
+  user.config.ai = { ...user.config.ai, ...(await request('GET', '/ai')), token: '', balance: 0 }
+}
+
+export async function updateAi(values) {
+  if (authEnabled) {
+    user.config.ai = { ...user.config.ai, ...(await request('PUT', '/ai', values)), token: '' }
+    return
+  }
+  return updateAiMock(values)
+}
+
+async function updateAiMock({ type, url, model, token, isProvided }) {
   await wait(700)
   if (!isProvided && !token) throw new Error('API key is required')
   if (!isProvided && !model) throw new Error('Model is required')
@@ -280,6 +305,7 @@ export async function updateAi({ type, url, model, token, isProvided }) {
 }
 
 export async function getUsageSummary() {
+  if (authEnabled) return { data: await request('GET', '/ai/usage/summary') }
   await wait()
   const data = { total: 0, content: 0, chat: 0, validate: 0 }
   for (const doc of db.usage) {
@@ -290,6 +316,7 @@ export async function getUsageSummary() {
 }
 
 export async function getUsage(page = 1, limit = 20) {
+  if (authEnabled) return { data: await request('GET', `/ai/usage?page=${page}&limit=${limit}`) }
   await wait()
   const totalPages = Math.max(1, Math.ceil(db.usage.length / limit))
   const current = Math.min(page, totalPages)
@@ -399,5 +426,77 @@ export async function rotateAppSecret(id) {
 export async function removeApp(id) {
   await wait()
   db.apps = db.apps.filter((item) => item._id != id)
+  sync()
+}
+
+// Accounts, comments and reply rules: the server when signed in, mock data in demo mode.
+
+export async function getAccounts() {
+  if (authEnabled) return request('GET', '/accounts')
+  await wait()
+  return db.accounts.map((account) => ({ ...account }))
+}
+
+export async function removeAccount(id) {
+  if (authEnabled) return request('DELETE', `/accounts/${id}`)
+  await wait()
+  db.accounts = db.accounts.filter((account) => account._id != id)
+  db.comments = db.comments.filter((comment) => comment.accountId != id)
+  sync()
+}
+
+// Returns the Instagram consent URL to send the browser to.
+export async function getInstagramAuthorizeUrl() {
+  if (authEnabled) return (await request('GET', '/instagram/authorize')).url
+  throw new Error('demo mode: connect Supabase and Instagram first')
+}
+
+const withAccount = (comment) => {
+  const account = db.accounts.find((item) => item._id == comment.accountId)
+  return { ...comment, account: account ? { username: account.username, platform: account.platform } : null }
+}
+
+export async function getComments({ page, limit, status }) {
+  if (authEnabled) return { data: await request('GET', `/comments?page=${page}&limit=${limit}&status=${status || ''}`) }
+  await wait()
+  return paginate(db.comments.filter((comment) => !status || comment.status == status).map(withAccount), page, limit)
+}
+
+export async function replyComment(id, text) {
+  if (authEnabled) return request('POST', `/comments/${id}/reply`, { text })
+  await wait(700)
+  const comment = db.comments.find((item) => item._id == id)
+  Object.assign(comment, { status: 'resolved', replyText: text, repliedBy: 'manual', error: '' })
+  sync()
+  return withAccount(comment)
+}
+
+export async function setCommentStatus(id, status) {
+  if (authEnabled) return request('PUT', `/comments/${id}`, { status })
+  await wait(300)
+  const comment = db.comments.find((item) => item._id == id)
+  comment.status = status
+  sync()
+  return withAccount(comment)
+}
+
+export async function getRules() {
+  if (authEnabled) return request('GET', '/rules')
+  await wait()
+  return db.rules.map((rule) => ({ ...rule, keywords: [...rule.keywords] }))
+}
+
+export async function saveRule(id, values) {
+  if (authEnabled) return id ? request('PUT', `/rules/${id}`, values) : request('POST', '/rules', values)
+  await wait(500)
+  if (id) Object.assign(db.rules.find((rule) => rule._id == id), values)
+  else db.rules.push({ _id: `r${Date.now()}`, ...values })
+  sync()
+}
+
+export async function removeRule(id) {
+  if (authEnabled) return request('DELETE', `/rules/${id}`)
+  await wait()
+  db.rules = db.rules.filter((rule) => rule._id != id)
   sync()
 }

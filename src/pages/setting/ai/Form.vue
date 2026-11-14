@@ -1,11 +1,12 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import Section from '../../../components/Section.vue'
 import { t, formatNumber } from '../../../i18n'
-import { user, updateAi } from '../../../api'
+import { user, updateAi, loadAi } from '../../../api'
 import { showToast } from '../../../toast'
+import { authEnabled } from '../../../auth'
 import { providers } from './providers'
 
 const emit = defineEmits(['save'])
@@ -27,6 +28,19 @@ const sources = [
   { value: true, key: 'provided', icon: 'mingcute:coin-line' },
 ]
 
+// With a server, the saved key never comes back to the browser: only its last 4 characters.
+const keyPlaceholder = computed(() => (user.config.ai?.tokenHint ? `••••••••${user.config.ai.tokenHint}` : t('ai.form.placeholder.key')))
+
+onMounted(async () => {
+  try {
+    await loadAi()
+    const ai = user.config.ai || {}
+    Object.assign(state, { type: ai.type || 'gemini', url: ai.url || '', model: ai.model || '', isProvided: !!ai.isProvided })
+  } catch (error) {
+    showToast(error.message, 'error')
+  }
+})
+
 const provider = computed(() => providers.find((item) => item.value == state.type) || providers[0])
 
 async function save() {
@@ -40,6 +54,7 @@ async function save() {
       token: state.token,
       isProvided: state.isProvided,
     })
+    state.token = authEnabled ? '' : state.token
     showToast(t('ai.form.toast'), 'success')
     emit('save')
   } catch (error) {
@@ -125,7 +140,7 @@ async function save() {
             id="ai-key"
             v-model.trim="state.token"
             :type="state.show ? 'text' : 'password'"
-            :placeholder="t('ai.form.placeholder.key')"
+            :placeholder="keyPlaceholder"
             class="w-full font-mono placeholder:font-sans"
             autocomplete="off"
           />

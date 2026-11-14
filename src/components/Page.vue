@@ -2,7 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { t } from '../i18n'
 
-defineProps({ title: { type: String, default: '' }, description: { type: String, default: '' } })
+defineProps({ title: { type: String, default: '' }, description: { type: String, default: '' }, back: { type: String, default: '/user/setting' } })
 </script>
 
 <template>
@@ -10,7 +10,8 @@ defineProps({ title: { type: String, default: '' }, description: { type: String,
     <div class="w-full max-w-3xl mx-auto flex flex-col gap-5">
       <div class="w-full flex items-start gap-2">
         <RouterLink
-          to="/user/setting"
+          v-if="back"
+          :to="back"
           class="lg:hidden btn btn-sm btn-square btn-ghost -ml-1.5 mt-0.5 shrink-0"
           :aria-label="t('setting.back')"
         >
