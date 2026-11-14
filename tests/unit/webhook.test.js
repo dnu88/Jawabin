@@ -2,13 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The Supabase client is faked; the signature check, the skip rules and the
 // duplicate handling in server/routes/webhook.js are the real code under test.
-const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [] }))
+const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [], chat: [] }))
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({ from: (table) => state.client.from(table), auth: { getUser: async () => ({}) } }),
 }))
 vi.mock('../../server/autoreply.js', () => ({
   autoReply: async (...args) => state.autoReply.push(args),
+}))
+vi.mock('../../server/chat.js', () => ({
+  receiveMessage: async (...args) => state.chat.push(args),
 }))
 
 const { receiveWebhook, verifyWebhook } = await import('../../server/routes/webhook.js')
@@ -73,6 +76,7 @@ function signedPost(body, { signature = true, secret = SECRET } = {}) {
 beforeEach(() => {
   state.inserts = []
   state.autoReply = []
+  state.chat = []
   state.client = fakeClient()
 })
 
@@ -180,5 +184,64 @@ describe('receiveWebhook (POST)', () => {
     expect(response.status).toBe(200)
     expect(spy).toHaveBeenCalled()
     spy.mockRestore()
+  })
+})
+
+describe('direct message deliveries', () => {
+  const messagePayload = (value = {}) => ({
+    object: 'instagram',
+    entry: [
+      {
+        id: '17841400000000000',
+        time: 1700000000,
+        changes: [
+          {
+            field: 'messages',
+            value: {
+              sender: { id: '999' },
+              recipient: { id: '17841400000000000' },
+              timestamp: 1700000000000,
+              message: { mid: 'mid-1', text: 'Bisa COD?' },
+              ...value,
+            },
+          },
+        ],
+      },
+    ],
+  })
+
+  it('hands a message event to the chat module with the connected account', async () => {
+    const response = await receiveWebhook(signedPost(messagePayload()))
+    expect(response.status).toBe(200)
+    expect(state.chat).toHaveLength(1)
+    expect(state.chat[0][0]).toMatchObject({ id: 'acc-1', user_id: 'user-1' })
+    expect(state.chat[0][1]).toMatchObject({ message: { mid: 'mid-1', text: 'Bisa COD?' } })
+  })
+
+  it('does not touch the comment path for a message event', async () => {
+    await receiveWebhook(signedPost(messagePayload()))
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(0)
+    expect(state.autoReply).toHaveLength(0)
+  })
+
+  it('skips a message event without a mid', async () => {
+    const body = messagePayload({ message: { text: 'tanpa mid' } })
+    await receiveWebhook(signedPost(body))
+    expect(state.chat).toHaveLength(0)
+  })
+
+  it('skips messages for an account that is not connected', async () => {
+    state.client = fakeClient({ account: null })
+    await receiveWebhook(signedPost(messagePayload()))
+    expect(state.chat).toHaveLength(0)
+  })
+
+  it('still answers 200 for both fields in one delivery', async () => {
+    const body = payload()
+    body.entry[0].changes.push(messagePayload().entry[0].changes[0])
+    const response = await receiveWebhook(signedPost(body))
+    expect(response.status).toBe(200)
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
+    expect(state.chat).toHaveLength(1)
   })
 })

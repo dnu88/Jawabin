@@ -110,6 +110,7 @@ describe('rules.createRule validation', () => {
       accountId: '',
       name: 'Harga',
       type: 'keyword',
+      channel: 'comment',
       keywords: ['harga'],
       reply: 'Cek bio',
       prompt: '',

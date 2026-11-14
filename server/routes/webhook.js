@@ -2,6 +2,7 @@ import { HttpError, env, json } from '../http.js'
 import { db, check } from '../db.js'
 import { hmac, safeEqual } from '../crypto.js'
 import { autoReply } from '../autoreply.js'
+import { receiveMessage } from '../chat.js'
 
 // Meta calls this once when the webhook is registered.
 export function verifyWebhook(url) {
@@ -35,6 +36,15 @@ async function handleComment(igUserId, value) {
   await autoReply(account, comment)
 }
 
+async function handleMessage(igUserId, value) {
+  if (!value?.message?.mid) return
+  const account = check(
+    await db().from('accounts').select('*').eq('platform', 'instagram').eq('platform_user_id', String(igUserId)).maybeSingle(),
+  )
+  if (!account) return
+  await receiveMessage(account, value)
+}
+
 export async function receiveWebhook(request) {
   const raw = await request.text()
   const signature = (request.headers.get('x-hub-signature-256') || '').replace('sha256=', '')
@@ -43,6 +53,10 @@ export async function receiveWebhook(request) {
   if (payload.object == 'instagram') {
     for (const entry of payload.entry || []) {
       for (const change of entry.changes || []) {
+        if (change.field == 'messages') {
+          await handleMessage(entry.id, change.value).catch((error) => console.error('message failed', error.message))
+          continue
+        }
         if (change.field != 'comments') continue
         await handleComment(entry.id, change.value).catch((error) => console.error('comment failed', error.message))
       }

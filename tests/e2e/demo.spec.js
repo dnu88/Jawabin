@@ -80,6 +80,25 @@ test.describe('demo mode', () => {
     await expect(links).toHaveCount(13)
   })
 
+  test('a conversation can be read and answered in demo mode', async ({ page }) => {
+    await page.goto('/user/conversation')
+    await page.waitForLoadState('networkidle')
+    const box = page.getByPlaceholder(/tulis pesan|write a message/i)
+    await expect(box).toBeVisible()
+    await box.fill('Halo dari uji e2e')
+    await page.getByRole('button', { name: /^kirim$|^send$/i }).click()
+    // The text shows up twice: in the thread bubble and in the list snippet.
+    await expect(page.locator('section p.whitespace-pre-wrap', { hasText: 'Halo dari uji e2e' })).toBeVisible()
+  })
+
+  test('a conversation older than 24 hours cannot be answered', async ({ page }) => {
+    await page.goto('/user/conversation')
+    await page.waitForLoadState('networkidle')
+    await page.getByText('budi.santoso').first().click()
+    await expect(page.getByText(/jendela balas 24 jam|24-hour reply window/i)).toBeVisible()
+    await expect(page.getByPlaceholder(/tulis pesan|write a message/i)).toBeDisabled()
+  })
+
   test('no horizontal scroll on a phone-sized viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     for (const route of ['/user/comment', '/user/setting/ai', '/user/account']) {

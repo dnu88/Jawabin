@@ -3,7 +3,7 @@ import { db, check } from './db.js'
 import { decrypt, encrypt } from './crypto.js'
 
 const GRAPH = 'https://graph.instagram.com/v23.0'
-export const SCOPES = 'instagram_business_basic,instagram_business_manage_comments'
+export const SCOPES = 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages'
 
 async function call(url, options = {}) {
   let response
@@ -37,8 +37,8 @@ export async function connect(code, redirectUri) {
   )
   const token = long.access_token
   const me = await call(`${GRAPH}/me?${new URLSearchParams({ fields: 'user_id,username,name,profile_picture_url', access_token: token })}`)
-  // Ask Instagram to send this account's comment events to our webhook.
-  await call(`${GRAPH}/me/subscribed_apps?${new URLSearchParams({ subscribed_fields: 'comments', access_token: token })}`, { method: 'POST' })
+  // Ask Instagram to send this account's comment and message events to our webhook.
+  await call(`${GRAPH}/me/subscribed_apps?${new URLSearchParams({ subscribed_fields: 'comments,messages', access_token: token })}`, { method: 'POST' })
   return {
     platform_user_id: String(me.user_id),
     username: me.username || '',
@@ -74,5 +74,16 @@ export async function replyToComment(account, commentId, message) {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify({ message }),
+  })
+}
+
+// Sends a direct message. recipientId is the Instagram-scoped id of the person
+// who wrote to us; Meta only accepts it inside the 24-hour reply window.
+export async function sendMessage(account, recipientId, text) {
+  const token = await accountToken(account)
+  return call(`${GRAPH}/me/messages`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ recipient: { id: String(recipientId) }, message: { text } }),
   })
 }

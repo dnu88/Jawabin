@@ -48,3 +48,30 @@ describe('matchRule', () => {
     expect(matchRule([rule()], {})).toBeUndefined()
   })
 })
+
+describe('matchRule channels', () => {
+  const comment = rule({ id: 'comment', account_id: null })
+  const chat = rule({ id: 'chat', channel: 'chat', account_id: null })
+  const both = rule({ id: 'both', channel: 'both', account_id: null })
+
+  it('answers comments with comment rules only', () => {
+    expect(matchRule([chat], { text: 'harga' })?.id).toBeUndefined()
+    expect(matchRule([comment], { text: 'harga' })?.id).toBe('comment')
+  })
+
+  it('answers DMs with chat rules only', () => {
+    expect(matchRule([comment], { text: 'harga' }, 'chat')).toBeUndefined()
+    expect(matchRule([chat], { text: 'harga' }, 'chat')?.id).toBe('chat')
+  })
+
+  it('lets a both-channels rule answer in either place', () => {
+    expect(matchRule([both], { text: 'harga' })?.id).toBe('both')
+    expect(matchRule([both], { text: 'harga' }, 'chat')?.id).toBe('both')
+  })
+
+  it('treats a rule from before the migration as a comment rule', () => {
+    const legacy = rule({ id: 'legacy', channel: undefined, account_id: null })
+    expect(matchRule([legacy], { text: 'harga' })?.id).toBe('legacy')
+    expect(matchRule([legacy], { text: 'harga' }, 'chat')).toBeUndefined()
+  })
+})

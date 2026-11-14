@@ -8,9 +8,10 @@ Tanpa pengaturan ini, web berjalan dalam **mode demo** (tanpa login, data tiruan
 ## 1. Supabase (database dan login)
 
 1. Buat proyek di https://supabase.com/dashboard.
-2. Buka **SQL Editor** dan jalankan isi dua file ini, berurutan:
+2. Buka **SQL Editor** dan jalankan isi tiga file ini, berurutan:
    - `supabase/migrations/0001_profiles.sql`
    - `supabase/migrations/0002_core.sql`
+   - `supabase/migrations/0003_chats.sql`
 3. Buka **Project Settings → API** dan catat tiga nilai: **Project URL**, **anon public key**, **service_role key**.
 4. Buka **Authentication → URL Configuration**, isi **Site URL** dengan alamat Vercel (mis. `https://jawabin.vercel.app`).
 5. Opsional, login Google: **Authentication → Providers → Google**, isi OAuth client dari Google Cloud.
@@ -43,11 +44,11 @@ semua key dan akun yang tersimpan harus dimasukkan ulang.
 5. Di **Webhooks**:
    - Callback URL: `https://ALAMAT-KAMU/api/webhook/meta`
    - Verify token: nilai `META_VERIFY_TOKEN`
-   - Centang field **comments**
+   - Centang field **comments** dan **messages** (komentar dan pesan langsung)
 6. Selama aplikasi masih mode **Development**, hanya akun Instagram yang didaftarkan sebagai tester
    (**App roles → Roles → Instagram Tester**) yang bisa dihubungkan, dan webhook hanya terkirim untuk akun itu.
-7. Supaya bisa dipakai akun orang lain, ajukan **App Review** untuk izin `instagram_business_basic` dan
-   `instagram_business_manage_comments`, lalu ubah aplikasi ke mode **Live**.
+7. Supaya bisa dipakai akun orang lain, ajukan **App Review** untuk izin `instagram_business_basic`,
+   `instagram_business_manage_comments`, dan `instagram_business_manage_messages`, lalu ubah aplikasi ke mode **Live**.
 
 Akun Instagram yang dihubungkan harus akun profesional (Bisnis atau Kreator).
 
@@ -56,8 +57,10 @@ Akun Instagram yang dihubungkan harus akun profesional (Bisnis atau Kreator).
 1. Daftar akun di web, lalu login.
 2. **Pengaturan → AI**: pilih penyedia, tempel API key, pilih model, Simpan. Server mengirim satu request uji.
 3. **Integrasi Akun → Hubungkan Instagram**.
-4. **Konten Automasi → Aturan baru**: buat aturan kata kunci atau AI.
+4. **Konten Automasi → Aturan baru**: buat aturan kata kunci atau AI. Untuk DM, pilih **Balas di: Pesan langsung**.
 5. Komentari salah satu post dari akun Instagram lain. Komentar muncul di **Komentar** dan dibalas otomatis.
+6. Kirim DM ke akun Instagram itu dari akun lain. Percakapan muncul di **Percakapan**, bisa dibalas manual,
+   dan dibalas otomatis oleh aturan DM selama masih di dalam jendela 24 jam.
 
 ## Struktur
 
@@ -70,6 +73,6 @@ Jalankan lokal dengan `npm run dev` (mode demo), atau `npx vercel dev` supaya `/
 
 ## Yang belum ada
 
-- Halaman selain AI, Integrasi Akun, Komentar, dan Automasi masih memakai data tiruan
+- Halaman selain AI, Integrasi Akun, Komentar, Percakapan, dan Automasi masih memakai data tiruan
   (Sesi, 2FA, Transaksi, Webhook, API Publik, Developer, dan lainnya).
-- DM/Percakapan, platform selain Instagram, pembayaran dan paket, operator, token Jawabin.
+- Platform selain Instagram, pembayaran dan paket, operator, token Jawabin.

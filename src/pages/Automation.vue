@@ -9,13 +9,13 @@ import { showToast } from '../toast'
 import { confirm } from '../confirm'
 
 const state = reactive({ loading: true, docs: [], accounts: [] })
-const form = reactive({ open: false, id: '', loading: false, error: '', name: '', type: 'keyword', keywords: '', reply: '', prompt: '', accountId: '', isActive: true })
+const form = reactive({ open: false, id: '', loading: false, error: '', name: '', type: 'keyword', channel: 'comment', keywords: '', reply: '', prompt: '', accountId: '', isActive: true })
 
 const accountName = (id) => {
   const account = state.accounts.find((item) => item._id == id)
   return account ? `@${account.username}` : t('automation.all')
 }
-const values = (rule) => ({ name: rule.name, type: rule.type, keywords: rule.keywords, reply: rule.reply, prompt: rule.prompt, accountId: rule.accountId, isActive: rule.isActive })
+const values = (rule) => ({ name: rule.name, type: rule.type, channel: rule.channel || 'comment', keywords: rule.keywords, reply: rule.reply, prompt: rule.prompt, accountId: rule.accountId, isActive: rule.isActive })
 
 async function load() {
   state.loading = true
@@ -31,7 +31,7 @@ async function load() {
 function openForm(rule = null) {
   Object.assign(form, {
     open: true, id: rule?._id || '', loading: false, error: '',
-    name: rule?.name || '', type: rule?.type || 'keyword', keywords: (rule?.keywords || []).join(', '),
+    name: rule?.name || '', type: rule?.type || 'keyword', channel: rule?.channel || 'comment', keywords: (rule?.keywords || []).join(', '),
     reply: rule?.reply || '', prompt: rule?.prompt || '', accountId: rule?.accountId || '', isActive: rule?.isActive ?? true,
   })
 }
@@ -44,7 +44,7 @@ async function submit() {
   if (form.error) return
   form.loading = true
   try {
-    await saveRule(form.id, { name: form.name.trim(), type: form.type, keywords, reply: form.reply.trim(), prompt: form.prompt.trim(), accountId: form.accountId, isActive: form.isActive })
+    await saveRule(form.id, { name: form.name.trim(), type: form.type, channel: form.channel, keywords, reply: form.reply.trim(), prompt: form.prompt.trim(), accountId: form.accountId, isActive: form.isActive })
     showToast(t('automation.toast.saved'), 'success')
     form.open = false
     load()
@@ -105,6 +105,10 @@ onMounted(load)
           <div class="flex flex-wrap items-center gap-1.5">
             <span class="text-sm font-medium break-all">{{ rule.name }}</span>
             <span class="px-1.5 py-px text-[11px] font-medium bg-base-200 rounded-bubble [--bubble-r:0.35rem]">{{ t(`automation.type.${rule.type}`) }}</span>
+            <span
+              v-if="(rule.channel || 'comment') != 'comment'"
+              class="px-1.5 py-px text-[11px] font-medium bg-base-200 rounded-bubble [--bubble-r:0.35rem]"
+            >{{ t(`automation.channel.${rule.channel || 'comment'}`) }}</span>
             <span class="text-xs text-base-content/60">{{ accountName(rule.accountId) }}</span>
           </div>
           <div v-if="rule.type == 'keyword'" class="flex flex-wrap gap-1">
@@ -140,6 +144,15 @@ onMounted(load)
       <div class="flex flex-col gap-1">
         <label for="rule-name" class="text-xs text-base-content/70">{{ t('automation.form.name') }}</label>
         <input id="rule-name" v-model="form.name" type="text" maxlength="80" class="w-full input" :placeholder="t('automation.form.namePlaceholder')" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="rule-channel" class="text-xs text-base-content/70">{{ t('automation.form.channel') }}</label>
+        <select id="rule-channel" v-model="form.channel" class="w-full select">
+          <option value="comment">{{ t('automation.channel.comment') }}</option>
+          <option value="chat">{{ t('automation.channel.chat') }}</option>
+          <option value="both">{{ t('automation.channel.both') }}</option>
+        </select>
+        <p class="text-xs text-base-content/60">{{ t('automation.form.channelHint') }}</p>
       </div>
       <div class="w-full grid grid-cols-2 gap-3">
         <div class="min-w-0 flex flex-col gap-1">

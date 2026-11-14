@@ -33,10 +33,11 @@ server/
   db.js                   Klien Supabase service-role, requireUser() (cek JWT)
   crypto.js               AES-256-GCM, HMAC, state OAuth bertanda tangan
   ai.js                   generate() untuk Gemini, Anthropic, dan penyedia kompatibel OpenAI
-  instagram.js            OAuth, token 60 hari + perpanjangan, balas komentar
+  instagram.js            OAuth, token 60 hari + perpanjangan, balas komentar, kirim DM
   autoreply.js            matchRule() dan autoReply()
-  routes/                 ai, accounts, comments, rules, webhook
-supabase/migrations/      0001_profiles.sql, 0002_core.sql
+  chat.js                 Terima DM, jendela 24 jam, balasan otomatis untuk DM
+  routes/                 ai, accounts, chats, comments, dashboard, rules, webhook
+supabase/migrations/      0001_profiles.sql, 0002_core.sql, 0003_chats.sql
 src/
   api.js                  SATU pintu data untuk tampilan. Lihat "Konvensi".
   server.js               request(method, path, body) ke /api dengan token sesi
@@ -61,6 +62,7 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 | Pengaturan AI + riwayat token | `pages/setting/AI.vue` | `GET/PUT /ai`, `GET /ai/usage`, `GET /ai/usage/summary` |
 | Integrasi Akun (Instagram) | `pages/Account.vue` | `GET /accounts`, `DELETE /accounts/:id`, `GET /instagram/authorize`, `GET /instagram/callback` |
 | Komentar | `pages/Comment.vue` | `GET /comments`, `PUT /comments/:id`, `POST /comments/:id/reply` |
+| Percakapan (DM) | `pages/Conversation.vue` | `GET /chats`, `GET /chats/:id`, `POST /chats/:id/messages` |
 | Automasi (aturan balasan) | `pages/Automation.vue` | `GET/POST /rules`, `PUT/DELETE /rules/:id` |
 | Webhook Meta | — | `GET/POST /webhook/meta` |
 
@@ -71,7 +73,7 @@ Key TikWM, Redeem, Aplikasi Terhubung. Semuanya di `src/pages/setting/`, datanya
 
 **C. Belum ditulis** (rute jatuh ke `pages/Placeholder.vue`)
 
-Laporan, Percakapan (DM), Kontak, Asisten AI, Konten Live, Konten Terjadwal, Storage, Template Automasi,
+Laporan, Kontak, Asisten AI, Konten Live, Konten Terjadwal, Storage, Template Automasi,
 Akun Operator, Riset TikTok/Threads, Affiliate, Upgrade dan pembayaran, platform selain Instagram.
 
 ## Yang sudah dan belum diuji
@@ -86,8 +88,8 @@ Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di
 Tes otomatis di repo (sejak langkah 1 di bawah):
 
 ```
-npm test          # Vitest, 79 tes unit, ~1 detik
-npm run test:e2e  # Playwright, mode demo (tanpa kredensial apa pun)
+npm test          # Vitest, 115 tes unit, ~1 detik
+npm run test:e2e  # Playwright, 31 tes mode demo (tanpa kredensial apa pun)
 ```
 
 `npm test` mencakup `server/http.js` (pagination, `json`, `env`), `crypto.js` (AES-GCM bolak-balik,
@@ -101,7 +103,8 @@ horizontal di 390px. Keduanya berjalan di `.github/workflows/test.yml` pada seti
 Belum pernah dijalankan:
 
 - Query Supabase apa pun (skema, RLS, trigger `handle_new_user`, embed `comments → accounts`).
-- OAuth Instagram, langganan webhook, balas komentar.
+- OAuth Instagram, langganan webhook, balas komentar, dan **seluruh jalur DM** (`/me/messages`,
+  event `messages`, jendela 24 jam) — semuanya belum pernah bertemu API Meta sungguhan.
 - Panggilan ke penyedia AI.
 - Fungsi di Vercel sungguhan.
 
@@ -125,6 +128,10 @@ Belum pernah dijalankan:
    `insert` hanya di-`console.error` lalu webhook tetap menjawab 200 — Meta tidak akan mengirim ulang,
    jadi komentar bisa hilang tanpa jejak. Tes `tests/unit/webhook.test.js` mengunci perilaku ini apa
    adanya; putuskan apakah mau dibiarkan (200) atau dibuat 500 agar Meta mencoba lagi.
+9. **DM ditulis dari ingatan.** Endpoint `POST /me/messages`, bentuk `recipient.id` (IGSID), nama
+   scope `instagram_business_manage_messages`, dan `subscribed_fields=comments,messages` belum dicocokkan
+   dengan dokumentasi Meta terbaru. Kalau salah, gejalanya 400 dari Instagram pada setiap kirim DM —
+   cek `server/instagram.js` lebih dulu sebelum menyalahkan UI.
 
 ## Konvensi
 
@@ -144,6 +151,9 @@ Belum pernah dijalankan:
   Tabel selain `profiles` sengaja tanpa policy: browser tidak boleh mengaksesnya langsung.
 - **Rahasia** (API key AI, token Instagram) disimpan lewat `encrypt()` dan tidak pernah dikirim ke browser.
   Yang dikirim hanya 4 karakter terakhir (`tokenHint`).
+- **Aturan punya kanal.** `rules.channel` = `comment` | `chat` | `both`; `matchRule(rules, target, channel)`
+  menyaringnya, dan aturan lama tanpa kolom itu dianggap `comment`. Balasan DM yang memakai AI dicatat
+  ke `ai_usage` dengan tipe `chat`, bukan `content`.
 - **Rute baru**: tambah satu baris di array `routes` di `api/index.js`. Tetap satu function (batas paket gratis Vercel).
 - **Teks**: jangan tulis teks langsung di template. Tambahkan kunci di `src/i18n.js` (ID dan EN) lalu pakai `t()`.
 - **Data tiruan**: kalau bentuk `seed()` di `src/api.js` berubah, naikkan `VERSION` supaya `localStorage` lama dibuang.
@@ -189,13 +199,28 @@ memakai Chromium yang diunduh.
 - Selesai bila: angka di Dashboard cocok dengan isi tabel `comments` dan `ai_usage`. **Itu bagian yang
   belum bisa dibuktikan di sini** — butuh kredensial Supabase (langkah 0).
 
-### 3. Percakapan (DM Instagram)
+### 3. Percakapan (DM Instagram) — **selesai di kode, belum diuji ke Instagram nyata**
 
-- Tambah scope `instagram_business_manage_messages` dan field webhook `messages`.
-- Tabel `chats` dan `messages`; rute daftar percakapan, isi percakapan, kirim pesan.
-- Perluas `rules` supaya bisa berlaku untuk DM, dan catat pemakaian AI dengan tipe `chat`.
-- Perhatikan aturan jendela 24 jam Meta untuk pesan balasan.
-- Selesai bila: DM masuk tampil, bisa dibalas manual, dan terbalas otomatis oleh aturan.
+- Scope `instagram_business_manage_messages` ditambahkan, dan langganan webhook kini
+  `comments,messages` (`server/instagram.js`).
+- Migrasi `supabase/migrations/0003_chats.sql`: tabel `chats` + `messages` (RLS tanpa policy, sama
+  seperti tabel lain) dan kolom `rules.channel` (`comment`/`chat`/`both`, default `comment`).
+- `server/chat.js`: `receiveMessage()` menyimpan DM (idempoten lewat unique `platform_message_id`),
+  menaikkan `unread`, lalu menjalankan aturan kanal `chat`; balasan AI dicatat sebagai `ai_usage`
+  bertipe `chat`. `windowOpen()` menjaga jendela balas 24 jam Meta.
+- Rute: `GET /chats`, `GET /chats/:id` (menghapus badge unread), `POST /chats/:id/messages`
+  (menolak 400 di luar jendela, bukan membiarkan provider yang menolak).
+- Tampilan `src/pages/Conversation.vue`: daftar percakapan + thread, badge "jendela tutup", kirim
+  manual, penanda balasan otomatis, dan pesan gagal tampil di thread. `Automation.vue` dapat pilihan
+  "Balas di" (komentar / DM / keduanya) beserta badge di daftar aturan.
+- Tes: `tests/unit/chat.test.js` (16 tes: jendela 24 jam, idempotensi, echo pesan sendiri, aturan
+  komentar tidak menjawab DM, AI + `ai_usage` tipe chat, kegagalan pengiriman, rute list/get/send),
+  `tests/unit/webhook.test.js` (+5 tes pengiriman DM), `tests/unit/autoreply.test.js` (+4 tes kanal),
+  dan 2 tes e2e (kirim pesan, jendela tutup).
+- Selesai bila: DM masuk tampil, bisa dibalas manual, dan terbalas otomatis oleh aturan. **Belum
+  dibuktikan**: butuh aplikasi Meta dengan akun tester (langkah 0). Yang belum terverifikasi di kode:
+  nama endpoint `/me/messages`, bentuk `recipient.id` (IGSID), dan perilaku `subscribed_fields`
+  ditulis dari ingatan — cocokkan dengan dokumentasi Meta terbaru saat mencoba pertama kali.
 
 ### 4. Sambungkan halaman pengaturan kelompok B ke server
 

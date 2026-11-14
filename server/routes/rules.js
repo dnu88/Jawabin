@@ -3,14 +3,17 @@ import { db, check } from '../db.js'
 
 const ruleDoc = (row) => ({
   _id: row.id, accountId: row.account_id || '', name: row.name, type: row.type, keywords: row.keywords,
-  reply: row.reply, prompt: row.prompt, isActive: row.is_active, createdAt: row.created_at,
+  reply: row.reply, prompt: row.prompt, channel: row.channel || 'comment', isActive: row.is_active, createdAt: row.created_at,
 })
+
+const CHANNELS = ['comment', 'chat', 'both']
 
 async function clean(user, body) {
   const type = body.type == 'ai' ? 'ai' : 'keyword'
   const values = {
     name: String(body.name || '').trim().slice(0, 80),
     type,
+    channel: CHANNELS.includes(body.channel) ? body.channel : 'comment',
     keywords: type == 'keyword' ? (body.keywords || []).map((word) => String(word).trim()).filter(Boolean).slice(0, 30) : [],
     reply: type == 'keyword' ? String(body.reply || '').trim().slice(0, 1000) : '',
     prompt: type == 'ai' ? String(body.prompt || '').trim().slice(0, 4000) : '',

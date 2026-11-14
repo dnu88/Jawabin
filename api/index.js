@@ -3,6 +3,7 @@ import { requireUser } from '../server/db.js'
 import { getAi, getUsage, getUsageSummary, putAi } from '../server/routes/ai.js'
 import { deleteAccount, instagramAuthorize, instagramCallback, listAccounts } from '../server/routes/accounts.js'
 import { getDashboard } from '../server/routes/dashboard.js'
+import { getChat, listChats, sendChatMessage } from '../server/routes/chats.js'
 import { listComments, replyComment, updateComment } from '../server/routes/comments.js'
 import { createRule, deleteRule, listRules, updateRule } from '../server/routes/rules.js'
 import { receiveWebhook, verifyWebhook } from '../server/routes/webhook.js'
@@ -20,6 +21,9 @@ const routes = [
   ['GET', 'comments', listComments],
   ['PUT', 'comments/:id', updateComment],
   ['POST', 'comments/:id/reply', replyComment],
+  ['GET', 'chats', listChats],
+  ['GET', 'chats/:id', getChat],
+  ['POST', 'chats/:id/messages', sendChatMessage],
   ['GET', 'rules', listRules],
   ['POST', 'rules', createRule],
   ['PUT', 'rules/:id', updateRule],

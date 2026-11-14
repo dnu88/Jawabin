@@ -8,7 +8,7 @@ import { authEnabled, updatePassword } from './auth'
 import { request } from './server'
 
 const KEY = 'jawabin-mock'
-const VERSION = 4
+const VERSION = 5
 export const API_BASE = 'https://api.jawabin.example'
 const wait = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -111,8 +111,9 @@ function seed() {
     activities: seedActivities(),
     accounts: [{ _id: 'acc1', platform: 'instagram', username: 'toko.contoh', name: 'Toko Contoh', picture: '', createdAt: hoursAgo(240) }],
     rules: [
-      { _id: 'r1', accountId: '', name: 'Tanya harga', type: 'keyword', keywords: ['harga', 'price', 'berapa'], reply: 'Halo kak! Harganya Rp149.000, sudah termasuk ongkir se-Jawa ya 😊', prompt: '', isActive: true },
-      { _id: 'r2', accountId: '', name: 'Balasan AI umum', type: 'ai', keywords: [], reply: '', prompt: 'Toko buka 09.00–21.00 WIB. Bisa COD. Jawab singkat dan ramah.', isActive: false },
+      { _id: 'r1', accountId: '', name: 'Tanya harga', type: 'keyword', channel: 'comment', keywords: ['harga', 'price', 'berapa'], reply: 'Halo kak! Harganya Rp149.000, sudah termasuk ongkir se-Jawa ya 😊', prompt: '', isActive: true },
+      { _id: 'r2', accountId: '', name: 'Balasan AI umum', type: 'ai', channel: 'comment', keywords: [], reply: '', prompt: 'Toko buka 09.00–21.00 WIB. Bisa COD. Jawab singkat dan ramah.', isActive: false },
+      { _id: 'r3', accountId: '', name: 'DM COD', type: 'keyword', channel: 'chat', keywords: ['cod', 'kirim', 'ready'], reply: 'Bisa kak, COD tersedia untuk seluruh Indonesia. Alamatnya di mana?', prompt: '', isActive: true },
     ],
     comments: [
       { _id: 'k1', accountId: 'acc1', from: 'pembeli_satu', text: 'Harganya berapa kak?', status: 'resolved', replyText: 'Halo kak! Harganya Rp149.000, sudah termasuk ongkir se-Jawa ya 😊', repliedBy: 'rule', error: '', createdAt: hoursAgo(0.4) },
@@ -120,6 +121,25 @@ function seed() {
       { _id: 'k3', accountId: 'acc1', from: 'siti_rahma', text: 'Bisa kirim ke Makassar?', status: 'pending', replyText: '', repliedBy: '', error: 'AI is not set up yet', createdAt: hoursAgo(3) },
       { _id: 'k4', accountId: 'acc1', from: 'promo.murah99', text: 'Cek bio kami untuk promo!', status: 'ignored', replyText: '', repliedBy: '', error: '', createdAt: hoursAgo(9) },
     ],
+    chats: [
+      { _id: 'ch1', accountId: 'acc1', participant: 'rina.pembeli', lastInboundAt: hoursAgo(1.2), lastMessageAt: hoursAgo(1.2), lastMessageText: 'Bisa COD ke Surabaya?', unread: 2 },
+      { _id: 'ch2', accountId: 'acc1', participant: 'budi.santoso', lastInboundAt: hoursAgo(30), lastMessageAt: hoursAgo(29.8), lastMessageText: 'Terima kasih infonya', unread: 0 },
+      { _id: 'ch3', accountId: 'acc1', participant: 'siti_rahma', lastInboundAt: hoursAgo(0.3), lastMessageAt: hoursAgo(0.3), lastMessageText: 'Katalog warna hitam ada?', unread: 1 },
+    ],
+    chatMessages: {
+      ch1: [
+        { _id: 'ch1-1', chatId: 'ch1', direction: 'in', text: 'Halo, ini masih ready?', repliedBy: '', error: '', createdAt: hoursAgo(2.5) },
+        { _id: 'ch1-2', chatId: 'ch1', direction: 'out', text: 'Halo kak, ready. Mau warna apa?', repliedBy: 'rule', error: '', createdAt: hoursAgo(2.4) },
+        { _id: 'ch1-3', chatId: 'ch1', direction: 'in', text: 'Bisa COD ke Surabaya?', repliedBy: '', error: '', createdAt: hoursAgo(1.2) },
+      ],
+      ch2: [
+        { _id: 'ch2-1', chatId: 'ch2', direction: 'in', text: 'Sudah sampai kak, makasih', repliedBy: '', error: '', createdAt: hoursAgo(30) },
+        { _id: 'ch2-2', chatId: 'ch2', direction: 'out', text: 'Terima kasih infonya 🙏', repliedBy: 'manual', error: '', createdAt: hoursAgo(29.8) },
+      ],
+      ch3: [
+        { _id: 'ch3-1', chatId: 'ch3', direction: 'in', text: 'Katalog warna hitam ada?', repliedBy: '', error: '', createdAt: hoursAgo(0.3) },
+      ],
+    },
     apps: [
       {
         _id: 'a1', name: 'Toko Dashboard', description: 'Dasbor internal untuk memantau komentar toko.', website: 'https://toko.example.com', logo: '',
@@ -478,6 +498,55 @@ export async function setCommentStatus(id, status) {
   comment.status = status
   sync()
   return withAccount(comment)
+}
+
+// Direct messages: the server when signed in, mock data in demo mode. Meta only
+// accepts a reply inside 24 hours of the person's last message, so the same rule
+// is applied here to keep demo mode honest.
+const WINDOW_MS = 24 * 60 * 60 * 1000
+const replyWindowOpen = (chat) => !!chat?.lastInboundAt && Date.now() - new Date(chat.lastInboundAt).getTime() < WINDOW_MS
+const accountOfChat = (chat) => {
+  const account = db.accounts.find((item) => item._id == chat.accountId)
+  return account ? { username: account.username, picture: account.picture, platform: account.platform } : null
+}
+const chatDoc = (chat) => ({ ...chat, canReply: replyWindowOpen(chat), account: accountOfChat(chat) })
+
+export async function getChats({ page = 1, limit = 20 } = {}) {
+  if (authEnabled) return { data: await request('GET', `/chats?page=${page}&limit=${limit}`) }
+  await wait()
+  const list = [...db.chats].sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)).map(chatDoc)
+  return paginate(list, page, limit)
+}
+
+export async function getChat(id) {
+  if (authEnabled) return request('GET', `/chats/${id}`)
+  await wait()
+  const chat = db.chats.find((item) => item._id == id)
+  if (!chat) throw new Error('conversation not found')
+  chat.unread = 0
+  sync()
+  return { chat: chatDoc(chat), messages: (db.chatMessages[id] || []).map((message) => ({ ...message })) }
+}
+
+export async function sendChatMessage(id, text) {
+  if (authEnabled) return request('POST', `/chats/${id}/messages`, { text })
+  await wait(600)
+  const chat = db.chats.find((item) => item._id == id)
+  if (!chat) throw new Error('conversation not found')
+  if (!replyWindowOpen(chat)) throw new Error('the 24-hour reply window has closed')
+  const message = {
+    _id: `msg-${Date.now()}`,
+    chatId: id,
+    direction: 'out',
+    text,
+    repliedBy: 'manual',
+    error: '',
+    createdAt: new Date().toISOString(),
+  }
+  db.chatMessages[id] = [...(db.chatMessages[id] || []), message]
+  Object.assign(chat, { lastMessageAt: message.createdAt, lastMessageText: text, unread: 0 })
+  sync()
+  return message
 }
 
 export async function getRules() {

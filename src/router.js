@@ -47,6 +47,7 @@ const router = createRouter({
         },
         { path: 'account', name: 'user-account', component: () => import('./pages/Account.vue') },
         { path: 'comment', name: 'user-comment', component: () => import('./pages/Comment.vue') },
+        { path: 'conversation', name: 'user-conversation', component: () => import('./pages/Conversation.vue') },
         { path: 'automation', name: 'user-automation', component: () => import('./pages/Automation.vue') },
         { path: ':pathMatch(.*)*', name: 'user-placeholder', component: Placeholder },
       ],
