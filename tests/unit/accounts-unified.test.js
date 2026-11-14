@@ -1,0 +1,70 @@
+import { beforeEach, afterEach, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), connect: vi.fn(), subscribe: vi.fn(), log: vi.fn() }))
+vi.mock('../../server/db.js', () => ({ db: () => ({ rpc: mocks.rpc }), check: ({ data, error }) => { if (error) throw Error(error.message); return data } }))
+vi.mock('../../server/instagram.js', () => ({ connect: mocks.connect, subscribeAccount: mocks.subscribe, authorizeUrl: vi.fn(), loginMode: () => 'unified_login' }))
+vi.mock('../../server/activity.js', () => ({ logActivity: mocks.log }))
+import { instagramCallback } from '../../server/routes/accounts.js'
+import { signState } from '../../server/crypto.js'
+const accounts = [{ platform_user_id: '101', username: 'one' }, { platform_user_id: '102', username: 'two' }]
+const callback = (extra = '') => new URL(`https://app.test/api/instagram/callback?state=${signState({ userId: 'user-1', authMode: 'unified_login' })}&code=mock-code${extra}`)
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.connect.mockResolvedValue(accounts)
+  mocks.rpc.mockResolvedValue({ data: accounts, error: null })
+  mocks.subscribe.mockResolvedValue(undefined)
+  mocks.log.mockResolvedValue(undefined)
+})
+afterEach(() => vi.restoreAllMocks())
+it('persists all accounts via ownership-guarded atomic RPC before subscribing or logging', async () => {
+  const response = await instagramCallback(callback())
+  expect(new URL(response.headers.get('location')).searchParams.get('connected')).toBe('one, two')
+  expect(mocks.rpc).toHaveBeenCalledWith('connect_instagram_accounts', { p_user_id: 'user-1', p_accounts: accounts })
+  expect(mocks.subscribe).toHaveBeenCalledTimes(2)
+  expect(mocks.rpc.mock.invocationCallOrder[0]).toBeLessThan(mocks.subscribe.mock.invocationCallOrder[0])
+  expect(mocks.log).toHaveBeenCalledTimes(2)
+})
+it('rejects an ownership conflict in ANY account before subscriptions or success logs', async () => {
+  mocks.rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'owned by another user; sensitive detail' } })
+  const result = await instagramCallback(callback())
+  expect(new URL(result.headers.get('location')).searchParams.get('error')).toMatch(/another Jawabin user/)
+  expect(mocks.subscribe).not.toHaveBeenCalled()
+  expect(mocks.log).not.toHaveBeenCalled()
+})
+it('rejects a cross-mode account in the batch with a distinct friendly error and no subscriptions', async () => {
+  mocks.rpc.mockResolvedValue({ error: { code: 'P0002', message: 'sensitive internal details' } })
+  const result = await instagramCallback(callback())
+  expect(new URL(result.headers.get('location')).searchParams.get('error')).toMatch(/switching Instagram login methods is not supported.*existing connection is unchanged/)
+  expect(mocks.subscribe).not.toHaveBeenCalled()
+  expect(mocks.log).not.toHaveBeenCalled()
+})
+it('fails safely on persistence errors, without exposing SQL/token details', async () => {
+  mocks.rpc.mockResolvedValue({ error: { code: '23505', message: 'secret-row-data' } })
+  const result = await instagramCallback(callback())
+  expect(result.headers.get('location')).not.toContain('secret-row-data')
+  expect(new URL(result.headers.get('location')).searchParams.has('error')).toBe(true)
+  expect(mocks.subscribe).not.toHaveBeenCalled()
+})
+it('does not claim success when subscription fails; reconnect is safe and explicit', async () => {
+  mocks.subscribe.mockRejectedValue(Error('provider secret'))
+  const result = await instagramCallback(callback())
+  expect(new URL(result.headers.get('location')).searchParams.get('error')).toMatch(/subscription.*connect again/)
+  expect(mocks.log).not.toHaveBeenCalled()
+})
+it.each(['&error=access_denied&error_description=secret', '&code='])('rejects OAuth errors or missing code before exchange (%s)', async suffix => {
+  const url = callback(suffix)
+  if (suffix === '&code=') url.searchParams.set('code', '')
+  const result = await instagramCallback(url)
+  expect(new URL(result.headers.get('location')).searchParams.has('error')).toBe(true)
+  expect(mocks.connect).not.toHaveBeenCalled()
+})
+it('preserves the legacy mode of an in-flight state even if the server switches mode', async () => {
+  const url = callback()
+  url.searchParams.set('state', signState({ userId: 'user-1' }))
+  await instagramCallback(url)
+  expect(mocks.connect).toHaveBeenCalledWith('mock-code', 'https://app.test/api/instagram/callback', 'instagram_login')
+})
+it('rejects tampered state before exchange', async () => {
+  const url = callback(); url.searchParams.set('state', 'tampered')
+  await instagramCallback(url)
+  expect(mocks.connect).not.toHaveBeenCalled()
+})

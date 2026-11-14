@@ -1,7 +1,7 @@
 import { HttpError, json, redirect } from '../http.js'
 import { db, check } from '../db.js'
 import { readState, signState } from '../crypto.js'
-import { authorizeUrl, connect } from '../instagram.js'
+import { authorizeUrl, connect, loginMode, subscribeAccount } from '../instagram.js'
 import { logActivity } from '../activity.js'
 
 const accountDoc = (row) => ({
@@ -21,22 +21,40 @@ export async function deleteAccount(user, _body, _url, id) {
 }
 
 export async function instagramAuthorize(user, _body, url) {
-  return json({ url: authorizeUrl(callbackUrl(url), signState({ userId: user.id })) })
+  const mode = loginMode()
+  return json({ url: authorizeUrl(callbackUrl(url), signState({ userId: user.id, authMode: mode }), mode) })
 }
 
 // Instagram sends the browser back here, so the user comes from the signed state.
 export async function instagramCallback(url) {
   const back = (query) => redirect(`${url.origin}/user/account?${new URLSearchParams(query)}`)
   try {
-    if (url.searchParams.get('error')) throw new HttpError(400, url.searchParams.get('error_description') || 'connection was cancelled')
-    const { userId } = readState(url.searchParams.get('state'))
-    const account = await connect(String(url.searchParams.get('code') || '').replace(/#_$/, ''), callbackUrl(url))
-    const existing = check(await db().from('accounts').select('user_id').eq('platform', 'instagram').eq('platform_user_id', account.platform_user_id).maybeSingle())
-    if (existing && existing.user_id != userId) throw new HttpError(400, 'this Instagram account is connected to another Jawabin user')
-    check(await db().from('accounts').upsert({ ...account, user_id: userId, platform: 'instagram' }, { onConflict: 'platform,platform_user_id' }))
-    await logActivity(userId, null, { module: 'account', action: 'connect', target: `@${account.username}`, detail: { platform: 'Instagram' } })
-    return back({ connected: account.username })
+    if (url.searchParams.get('error')) throw new HttpError(400, 'Instagram connection was cancelled; please try again')
+    // Old in-flight states predate authMode and must still use Instagram Login.
+    const { userId, authMode = 'instagram_login' } = readState(url.searchParams.get('state'))
+    if (!userId || !['instagram_login', 'unified_login'].includes(authMode)) throw new HttpError(400, 'invalid state')
+    const code = String(url.searchParams.get('code') || '').replace(/#_$/, '')
+    if (!code.trim()) throw new HttpError(400, 'missing authorization code')
+    const accounts = await connect(code, callbackUrl(url), authMode)
+    // A single transaction checks the complete set before writing anything. The
+    // SQL also guards ON CONFLICT, so a concurrent callback cannot steal a row.
+    const { error } = await db().rpc('connect_instagram_accounts', { p_user_id: userId, p_accounts: accounts })
+    if (error) throw new HttpError(400, error.code === '42501'
+      ? 'this Instagram account is connected to another Jawabin user'
+      : error.code === 'P0002'
+        ? 'switching Instagram login methods is not supported yet; your existing connection is unchanged'
+        : 'Instagram accounts could not be saved; please connect again')
+    // Persist first: if ownership changes in a competing callback, no external
+    // subscription has happened. A subscription failure leaves owned rows in
+    // place for a safe idempotent reconnect, not a false success or data deletion.
+    try {
+      for (const account of accounts) await subscribeAccount(account)
+    } catch {
+      throw new HttpError(400, 'Instagram webhook subscription failed; please connect again')
+    }
+    for (const account of accounts) await logActivity(userId, null, { module: 'account', action: 'connect', target: `@${account.username}`, detail: { platform: 'Instagram' } })
+    return back({ connected: accounts.map(account => account.username).join(', ') })
   } catch (error) {
-    return back({ error: error.message })
+    return back({ error: error instanceof HttpError ? error.message : 'Instagram connection failed; please connect again' })
   }
 }

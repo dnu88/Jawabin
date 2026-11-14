@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The Supabase client is faked; the signature check, the skip rules and the
 // duplicate handling in server/routes/webhook.js are the real code under test.
@@ -78,6 +78,45 @@ beforeEach(() => {
   state.autoReply = []
   state.chat = []
   state.client = fakeClient()
+})
+
+afterEach(() => vi.unstubAllEnvs())
+
+describe('unified and legacy webhook signatures coexist', () => {
+  it('accepts Meta-signed unified account events even when new-login mode is rolled back', async () => {
+    vi.stubEnv('META_APP_SECRET', 'mock-meta-secret')
+    vi.stubEnv('INSTAGRAM_LOGIN_MODE', 'instagram_login')
+    state.client = fakeClient({ account: { id: 'acc-1', user_id: 'user-1', platform_user_id: '17841400000000000', auth_mode: 'unified_login' } })
+    await receiveWebhook(signedPost(payload(), { secret: 'mock-meta-secret' }))
+    expect(state.inserts).toHaveLength(1)
+  })
+  it('does not let the legacy app secret authorize unified account deliveries', async () => {
+    vi.stubEnv('META_APP_SECRET', 'mock-meta-secret')
+    state.client = fakeClient({ account: { id: 'acc-1', user_id: 'user-1', platform_user_id: '17841400000000000', auth_mode: 'unified_login' } })
+    await receiveWebhook(signedPost(payload()))
+    expect(state.inserts).toHaveLength(0)
+  })
+  it('does not let the Meta app secret authorize legacy account deliveries', async () => {
+    vi.stubEnv('META_APP_SECRET', 'mock-meta-secret')
+    await receiveWebhook(signedPost(payload(), { secret: 'mock-meta-secret' }))
+    expect(state.inserts).toHaveLength(0)
+  })
+  it('continues legacy signatures in unified start mode; never bypasses missing configuration', async () => {
+    vi.stubEnv('INSTAGRAM_LOGIN_MODE', 'unified')
+    vi.stubEnv('META_APP_SECRET', '')
+    await receiveWebhook(signedPost(payload()))
+    expect(state.inserts).toHaveLength(1)
+    vi.stubEnv('INSTAGRAM_APP_SECRET', '')
+    await expect(receiveWebhook(signedPost(payload()))).rejects.toThrow(/bad signature/)
+  })
+  it('rejects a bare digest without sha256= and a signed payload that was changed', async () => {
+    const raw = JSON.stringify(payload())
+    for (const signature of [hmac(SECRET, raw), `sha256=${hmac(SECRET, raw + ' ')}`]) {
+      const request = new Request('https://app.test/webhook', { method: 'POST', body: raw, headers: { 'x-hub-signature-256': signature } })
+      await expect(receiveWebhook(request)).rejects.toThrow(/bad signature/)
+    }
+    expect(state.inserts).toHaveLength(0)
+  })
 })
 
 describe('verifyWebhook (GET handshake)', () => {

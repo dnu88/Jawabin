@@ -11,11 +11,11 @@ export function verifyWebhook(url) {
   return new Response(url.searchParams.get('hub.challenge') || '', { status: 200 })
 }
 
-async function handleComment(igUserId, value) {
+async function handleComment(igUserId, value, modes) {
   if (!value?.id || !value.text) return
   const account = check(await db().from('accounts').select('*').eq('platform', 'instagram').eq('platform_user_id', String(igUserId)).maybeSingle())
   // Skip unknown accounts and the account's own comments (including our replies).
-  if (!account || String(value.from?.id) == account.platform_user_id) return
+  if (!account || !modes.has(account.auth_mode || 'instagram_login') || String(value.from?.id) == account.platform_user_id) return
   const { data: comment, error } = await db()
     .from('comments')
     .insert({
@@ -36,25 +36,32 @@ async function handleComment(igUserId, value) {
   await autoReply(account, comment)
 }
 
-async function handleMessage(igUserId, value) {
+async function handleMessage(igUserId, value, modes) {
   if (!value?.message?.mid) return
   const account = check(
     await db().from('accounts').select('*').eq('platform', 'instagram').eq('platform_user_id', String(igUserId)).maybeSingle(),
   )
-  if (!account) return
+  if (!account || !modes.has(account.auth_mode || 'instagram_login')) return
   await receiveMessage(account, value)
 }
 
 export async function receiveWebhook(request) {
   const raw = await request.text()
-  const signature = (request.headers.get('x-hub-signature-256') || '').replace('sha256=', '')
-  if (!signature || !safeEqual(signature, hmac(env('INSTAGRAM_APP_SECRET'), raw))) throw new HttpError(401, 'bad signature')
+  const signature = /^sha256=([a-f0-9]{64})$/.exec(request.headers.get('x-hub-signature-256') || '')?.[1]
+  // During migration both app families can deliver to this endpoint. Verify
+  // with configured secrets, then only dispatch accounts of the matching family.
+  const modes = new Set()
+  for (const [mode, name] of [['instagram_login', 'INSTAGRAM_APP_SECRET'], ['unified_login', 'META_APP_SECRET']]) {
+    const secret = process.env[name]
+    if (signature && secret && safeEqual(signature, hmac(secret, raw))) modes.add(mode)
+  }
+  if (!modes.size) throw new HttpError(401, 'bad signature')
   const payload = JSON.parse(raw)
   if (payload.object == 'instagram') {
     for (const entry of payload.entry || []) {
       // Documented shape for messaging (Business Login for Instagram): entry[].messaging[].
       for (const event of entry.messaging || []) {
-        await handleMessage(entry.id, event).catch((error) => console.error('message failed', error.message))
+        await handleMessage(entry.id, event, modes).catch((error) => console.error('message failed', error.message))
       }
       // Comments arrive in changes[]; the Business Login examples also put
       // field/value straight on the entry, so accept both.
@@ -62,11 +69,11 @@ export async function receiveWebhook(request) {
       for (const change of changes) {
         // Older/unified setups wrap messages as a change with field "messages".
         if (change.field == 'messages') {
-          await handleMessage(entry.id, change.value).catch((error) => console.error('message failed', error.message))
+          await handleMessage(entry.id, change.value, modes).catch((error) => console.error('message failed', error.message))
           continue
         }
         if (change.field != 'comments' && change.field != 'live_comments') continue
-        await handleComment(entry.id, change.value).catch((error) => console.error('comment failed', error.message))
+        await handleComment(entry.id, change.value, modes).catch((error) => console.error('comment failed', error.message))
       }
     }
   }

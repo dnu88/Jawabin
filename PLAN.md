@@ -9,7 +9,26 @@ Jawabin adalah aplikasi web untuk mengelola dan membalas komentar media sosial s
 Tampilan dan teksnya direkonstruksi dari bundle publik Repliz (`repliz.com`), dengan merek diganti menjadi Jawabin.
 
 Alur inti sudah ditulis ujung ke ujung: **login → hubungkan Instagram → komentar masuk → dibalas aturan atau AI**.
-Alur itu **belum pernah dijalankan terhadap layanan sungguhan** (Supabase, Meta, penyedia AI), karena kredensialnya belum ada.
+Onboarding hosted Supabase + Vercel **sudah diverifikasi** (signup, konfirmasi email, login,
+API profil/dashboard/chats). Alur Instagram dan penyedia AI **belum terbukti pada layanan nyata**.
+Status rinci: [`docs/audit/unified-login-migration.md`](docs/audit/unified-login-migration.md).
+
+### Gate Unified Login (pembaruan onboarding)
+
+| Lapisan | Status |
+| --- | --- |
+| Hosted Supabase 0001–0004 | Diterapkan atomik via SQL Editor; katalog/RLS/trigger/constraint dibaca ulang |
+| Hosted Vercel + Auth | Deployment Ready; profil Danu/free, login, API terautentikasi 200; chats anonim 401 |
+| Meta eksternal | App Unpublished, tester diterima, tiga izin Ready for testing, config dan redirect tersimpan |
+| Kode Unified + migrasi 0005 | Ada di working tree, belum dianggap rilis; tes/review akhir **pending** |
+| Penerapan hosted 0005 + deploy Unified | **Pending**, hanya setelah review tes hijau |
+| OAuth/subscription/webhook nyata | **Pending**; belum ada token atau akun tersambung |
+| Outbound/AI nyata, Live/App Review | **Tidak diizinkan dalam lingkup sekarang** |
+
+Selesai bila: regression legacy dan Unified hijau, tes migrasi/ownership disetujui,
+0005 diterapkan dan dibaca ulang, deployment baru diverifikasi; OAuth, subscription,
+inbound, dan outbound dilaporkan sebagai gate terpisah. Jangan mengklaim selesai hanya
+dari stub Graph. Outbound dan publikasi memerlukan persetujuan baru.
 
 - Repo: `dnu88/Jawabin`. Branch default sekaligus branch kerja: `claude/elegant-hamilton-vormhk`. Tidak ada `main`.
 - Deploy: Vercel, otomatis setiap push ke branch itu.
@@ -53,7 +72,7 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 
 ## Status fitur
 
-**A. Server + tampilan sudah ditulis** (belum diuji dengan layanan sungguhan)
+**A. Server + tampilan sudah ditulis** (hosted Auth/API dasar teruji; fitur Meta/AI belum)
 
 | Fitur | Tampilan | Rute server |
 | --- | --- | --- |
@@ -90,16 +109,17 @@ Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di
 Tes otomatis di repo (sejak langkah 1 di bawah):
 
 ```
-npm test                 # Vitest, 131 tes unit, ~1,4 detik
-npm run test:e2e         # Playwright, 31 tes mode demo (tanpa kredensial apa pun)
-npm run test:integration # 12 tes terhadap Supabase lokal + stub Graph (butuh Docker)
+npm test                 # Vitest unit; hasil pascamigrasi pending review
+npm run test:e2e         # Playwright demo tanpa kredensial
+npm run test:integration # Supabase lokal + stub Graph (butuh Docker/env)
 ```
 
 `test:integration` menjalankan alur DM pada infrastruktur sungguhan: Postgres + Auth + PostgREST
-dari `supabase start`, migrasi 0001–0003, JWT GoTrue nyata, tanda tangan webhook HMAC nyata, dan
+dari `supabase start`, migrasi lokal yang disalin dari repo, JWT GoTrue nyata, tanda tangan webhook HMAC nyata, dan
 HTTP nyata ke `api/index.js`. Hanya Instagram Graph yang diganti stub lokal yang merekam request,
 karena tanpa app Meta tidak ada yang bisa dipanggil. Fixture webhook-nya memakai bentuk yang
-didokumentasikan Meta (`entry[].messaging[]`), bukan bentuk karangan. Hasil terakhir: **12/12 lolos**.
+didokumentasikan Meta (`entry[].messaging[]`), bukan bentuk karangan. Hasil historis sebelum Unified: **12/12 lolos**;
+ini bukan hasil regression Unified/0005. Hasil terbaru menunggu review.
 Tes ini tidak masuk CI (butuh Docker dan ±2 GB image), jalankan manual:
 
 ```
@@ -117,14 +137,18 @@ duplikat `23505`, komentar sendiri, akun tak dikenal) dan validasi rute `rules`/
 `test:e2e` membuka semua rute mode demo, memastikan tidak ada error konsol dan tidak ada scroll
 horizontal di 390px. Keduanya berjalan di `.github/workflows/test.yml` pada setiap push dan PR.
 
-Belum pernah dijalankan:
+Sudah diverifikasi pada hosted onboarding: migrasi 0001–0004, sembilan tabel RLS,
+policy profil/grant nama, trigger signup, constraint kanal/arah dan indeks pesan;
+signup/konfirmasi/login, `/api/profile`, `/api/dashboard`, `/api/chats` 200 dengan JWT,
+chats anonim 401. Ini tidak membuktikan isi dashboard pada data Instagram nyata,
+penyimpanan notifikasi, atau event Log Aktivitas.
 
-- Query Supabase **produksi** apa pun (skema, RLS, trigger `handle_new_user`, embed `comments → accounts`).
-  Skema sudah terbukti jalan di Postgres lokal lewat tes integrasi, tapi belum pernah di proyek Supabase asli.
+Belum dijalankan atau belum dinyatakan selesai:
+
+- Migrasi hosted 0005 dan deployment perubahan Unified Login (menunggu review tes hijau).
 - OAuth Instagram, langganan webhook, balas komentar, dan pengiriman DM ke **API Meta sungguhan**
   (butuh app Meta + akun tester). Kontraknya sudah dicocokkan dengan dokumentasi resmi; lihat risiko 4 dan 9.
 - Panggilan ke penyedia AI.
-- Fungsi di Vercel sungguhan.
 
 ## Risiko yang perlu dicek lebih dulu
 
@@ -134,7 +158,10 @@ Belum pernah dijalankan:
    Pastikan query asli (mis. `hub.challenge`, `code`, `state`) tetap terbawa setelah rewrite.
 3. **Tanda tangan webhook.** `receiveWebhook` memakai `request.text()` untuk body mentah.
    Kalau Vercel sudah mem-parsing body lebih dulu, HMAC akan selalu gagal.
-4. **Instagram API — sudah dicek ke dokumentasi (Sep 2026), satu hal masih asumsi.** Yang cocok:
+4. **Dua kontrak login, jangan dicampur.** Catatan host/scope berikut khusus **legacy**;
+   Unified memakai Graph Facebook v27.0, ID Instagram dari assigned accounts, SUAT,
+   `/IG_ID/messages`, dan config permissions (lihat SETUP/audit). Mode akun menentukan
+   routing dan lifecycle token; env global hanya memilih koneksi baru. Kontrak legacy:
    host `graph.instagram.com`, `POST /me/messages`, body `{recipient:{id}, message:{text}}`, balasan
    `{recipient_id, message_id}`, batas teks 1000 **byte** UTF-8, scope `instagram_business_basic` +
    `instagram_business_manage_messages` + `instagram_business_manage_comments`. Yang belum terbukti:
@@ -184,7 +211,8 @@ Belum pernah dijalankan:
   menyaringnya, dan aturan lama tanpa kolom itu dianggap `comment`. Balasan DM yang memakai AI dicatat
   ke `ai_usage` dengan tipe `chat`, bukan `content`.
 - **Basis URL Instagram bisa ditimpa.** `INSTAGRAM_GRAPH_BASE` (default `https://graph.instagram.com/v23.0`)
-  hanya dipakai tes integrasi untuk menunjuk stub lokal; jangan diisi di produksi.
+  hanya dipakai tes integrasi legacy untuk menunjuk stub lokal; jangan diisi di produksi.
+  Unified memakai `https://graph.facebook.com/v27.0`, bukan override legacy.
 - **Bentuk payload webhook mengikuti dokumentasi Meta, bukan tebakan.** Komentar datang sebagai
   `entry[].changes[]` berisi `field: "comments"`; contoh Business Login juga menaruh `field`/`value`
   langsung di `entry`, jadi keduanya diterima. Pesan datang sebagai `entry[].messaging[]`; pembungkus
@@ -207,7 +235,7 @@ Kerjakan berurutan. Tiap langkah selesai kalau kriteria "Selesai bila" terpenuhi
 
 ### 0. Sambungkan platform dan buktikan alur inti (wajib sebelum yang lain)
 
-Butuh pemilik repo: ikuti `SETUP.md` (Supabase, variabel Vercel, aplikasi Meta dengan akun tester).
+Ikuti `SETUP.md`: onboarding hosted dasar sudah lolos; lanjutkan gate Unified di atas.
 
 - Perbaiki apa pun yang gagal, mulai dari daftar "Risiko" di atas.
 - Selesai bila: daftar dan login berhasil; simpan pengaturan AI berhasil dan tercatat di riwayat; akun Instagram
@@ -275,10 +303,10 @@ memakai Chromium yang diunduh.
 
 Urutan menurut manfaat:
 
-1. **Notifikasi** — **selesai di kode, belum dicoba di Supabase nyata.** Kolom `profiles.notification`
+1. **Notifikasi** — **selesai di kode, penyimpanan belum diuji hosted.** Skema 0004 sudah diterapkan. Kolom `profiles.notification`
    (migrasi 0004), rute `GET /profile` dan `PUT /profile/notification`. **Nama profil belum**: halaman Profil
    belum punya form ubah nama.
-2. **Log Aktivitas** — **selesai di kode, belum dicoba di Supabase nyata.** Tabel `activities` (migrasi 0004).
+2. **Log Aktivitas** — **selesai di kode, perilaku belum diuji hosted.** Tabel `activities` (migrasi 0004 sudah diterapkan).
    `api/index.js` mencatat setiap rute yang punya elemen keempat `[modul, aksi]`, berhasil maupun gagal;
    `logActivity` tidak pernah melempar error. Tes: `tests/unit/activity.test.js` dan blok "activity log" di
    `tests/unit/router.test.js`. Yang belum: `target` dan `detail` hanya terisi untuk "hubungkan akun";
