@@ -81,7 +81,7 @@ export const helpLinks = [
 // session is active they are hidden from the settings menu, so demo rows never
 // look like the signed-in user's own data. Demo mode keeps showing all of them.
 export const mockSettingKeys = [
-  'session', 'activity', 'twofactor', 'transaction', 'notification',
+  'session', 'twofactor', 'transaction',
   'api', 'developer', 'webhook', 'tikwm', 'redeem', 'connected_app',
 ]
 

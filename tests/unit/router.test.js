@@ -12,6 +12,14 @@ const spies = vi.hoisted(() => {
   return {
     ai: make(),
     getUser: vi.fn(),
+    activity: {
+      logActivity: vi.fn(async () => {}),
+      listActivities: vi.fn(async () => new Response('{"hit":"listActivities"}')),
+    },
+    profile: {
+      getProfile: vi.fn(async () => new Response('{"hit":"getProfile"}')),
+      putNotification: vi.fn(async () => new Response('{"hit":"putNotification"}')),
+    },
     accounts: {
       listAccounts: vi.fn(async () => new Response('{"hit":"listAccounts"}')),
       deleteAccount: vi.fn(async () => new Response('{"hit":"deleteAccount"}')),
@@ -43,6 +51,8 @@ vi.mock('../../server/routes/accounts.js', () => spies.accounts)
 vi.mock('../../server/routes/comments.js', () => spies.comments)
 vi.mock('../../server/routes/rules.js', () => spies.rules)
 vi.mock('../../server/routes/webhook.js', () => spies.webhook)
+vi.mock('../../server/activity.js', () => spies.activity)
+vi.mock('../../server/routes/profile.js', () => spies.profile)
 
 const api = await import('../../api/index.js')
 
@@ -190,5 +200,30 @@ describe('error translation', () => {
     expect(await response.json()).toEqual({ error: 'something went wrong' })
     expect(spy).toHaveBeenCalled()
     spy.mockRestore()
+  })
+})
+
+describe('activity log', () => {
+  it('records a successful change with its module and action', async () => {
+    const response = await call('PUT', '/api/profile/notification', { body: { expired: true } })
+    expect(response.status).toBe(200)
+    expect(spies.activity.logActivity).toHaveBeenCalledTimes(1)
+    const [userId, , entry] = spies.activity.logActivity.mock.calls[0]
+    expect(userId).toBe('user-1')
+    expect(entry).toEqual({ module: 'setting', action: 'update_notification' })
+  })
+
+  it('records a failed change as failed and still returns the error', async () => {
+    spies.rules.createRule.mockRejectedValueOnce(Object.assign(new Error('name is required'), { status: 400 }))
+    const response = await call('POST', '/api/rules', { body: {} })
+    expect(response.status).not.toBe(200)
+    const [, , entry] = spies.activity.logActivity.mock.calls[0]
+    expect(entry).toMatchObject({ module: 'automation', action: 'create', status: 'failed', error: 'name is required' })
+  })
+
+  it('does not record reads', async () => {
+    await call('GET', '/api/rules')
+    await call('GET', '/api/activities')
+    expect(spies.activity.logActivity).not.toHaveBeenCalled()
   })
 })

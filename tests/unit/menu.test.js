@@ -22,7 +22,7 @@ describe('setting menu', () => {
 
   it('hides the unwired pages once a real session is active', () => {
     const visible = visibleSettingItems(true)
-    expect(visible.map((item) => item.key)).toEqual(['profile', 'ai'])
+    expect(visible.map((item) => item.key)).toEqual(['profile', 'activity', 'notification', 'ai'])
     for (const key of mockSettingKeys) {
       expect(visible.some((item) => item.key == key), key).toBe(false)
     }

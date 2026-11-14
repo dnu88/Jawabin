@@ -37,7 +37,7 @@ server/
   autoreply.js            matchRule() dan autoReply()
   chat.js                 Terima DM, jendela 24 jam, balasan otomatis untuk DM
   routes/                 ai, accounts, chats, comments, dashboard, rules, webhook
-supabase/migrations/      0001_profiles.sql, 0002_core.sql, 0003_chats.sql
+supabase/migrations/      0001_profiles.sql, 0002_core.sql, 0003_chats.sql, 0004_notification_activity.sql
 src/
   api.js                  SATU pintu data untuk tampilan. Lihat "Konvensi".
   server.js               request(method, path, body) ke /api dengan token sesi
@@ -64,11 +64,13 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 | Komentar | `pages/Comment.vue` | `GET /comments`, `PUT /comments/:id`, `POST /comments/:id/reply` |
 | Percakapan (DM) | `pages/Conversation.vue` | `GET /chats`, `GET /chats/:id`, `POST /chats/:id/messages` |
 | Automasi (aturan balasan) | `pages/Automation.vue` | `GET/POST /rules`, `PUT/DELETE /rules/:id` |
+| Notifikasi | `pages/setting/Notification.vue` | `GET /profile`, `PUT /profile/notification` |
+| Log Aktivitas | `pages/setting/Activity.vue` | `GET /activities`; ditulis otomatis oleh `api/index.js` |
 | Webhook Meta | — | `GET/POST /webhook/meta` |
 
 **B. Tampilan saja, data tiruan walaupun sudah login**
 
-Profil (selain ganti password), Sesi, Log Aktivitas, 2FA, Transaksi, Notifikasi, API Publik, Developer, Webhook keluar,
+Profil (selain ganti password), Sesi, 2FA, Transaksi, API Publik, Developer, Webhook keluar,
 Key TikWM, Redeem, Aplikasi Terhubung. Semuanya di `src/pages/setting/`, datanya dari fungsi mock di `src/api.js`.
 
 **C. Belum ditulis** (rute jatuh ke `pages/Placeholder.vue`)
@@ -171,6 +173,8 @@ Belum pernah dijalankan:
 - **Basis URL Instagram bisa ditimpa.** `INSTAGRAM_GRAPH_BASE` (default `https://graph.instagram.com/v23.0`)
   hanya dipakai tes integrasi untuk menunjuk stub lokal; jangan diisi di produksi.
 - **Rute baru**: tambah satu baris di array `routes` di `api/index.js`. Tetap satu function (batas paket gratis Vercel).
+  Untuk rute yang mengubah data, isi elemen keempat `[modul, aksi]` supaya tercatat di Log Aktivitas;
+  pakai pasangan yang punya kunci `activity.event.<modul>_<aksi>` di `src/locales/*.json`.
 - **Teks**: jangan tulis teks langsung di template. Tambahkan kunci di `src/i18n.js` (ID dan EN) lalu pakai `t()`.
 - **Data tiruan**: kalau bentuk `seed()` di `src/api.js` berubah, naikkan `VERSION` supaya `localStorage` lama dibuang.
 - **Gaya tampilan**: pakai `Page` dan `Section`, kelas `rounded-bubble [--bubble-r:…]`, tombol `btn btn-sm`.
@@ -248,14 +252,21 @@ memakai Chromium yang diunduh.
 
 Urutan menurut manfaat:
 
-1. **Notifikasi** dan **nama profil**: kolom di `profiles`.
-2. **Log Aktivitas**: tabel `activities`, ditulis dari tiap rute server yang mengubah data.
+1. **Notifikasi** — **selesai di kode, belum dicoba di Supabase nyata.** Kolom `profiles.notification`
+   (migrasi 0004), rute `GET /profile` dan `PUT /profile/notification`. **Nama profil belum**: halaman Profil
+   belum punya form ubah nama.
+2. **Log Aktivitas** — **selesai di kode, belum dicoba di Supabase nyata.** Tabel `activities` (migrasi 0004).
+   `api/index.js` mencatat setiap rute yang punya elemen keempat `[modul, aksi]`, berhasil maupun gagal;
+   `logActivity` tidak pernah melempar error. Tes: `tests/unit/activity.test.js` dan blok "activity log" di
+   `tests/unit/router.test.js`. Yang belum: `target` dan `detail` hanya terisi untuk "hubungkan akun";
+   login/logout tidak tercatat karena terjadi langsung antara browser dan Supabase; filter per operator
+   diabaikan karena operator belum ada di server.
 3. **Sesi** dan **2FA**: pakai fitur Supabase Auth (daftar sesi, MFA TOTP) alih-alih membuat sendiri.
 4. **Webhook keluar**: tabel `webhooks` dan `webhook_logs`; kirim event komentar setelah `handleComment`.
 5. **API Publik** dan **Developer** (OAuth untuk pihak ketiga): paling besar, kerjakan terakhir atau tunda.
 
 Halaman yang belum disambungkan **sudah disembunyikan** dari menu pengaturan saat `authEnabled`:
-`src/menu.js` → `visibleSettingItems(true)` hanya menyisakan Profil dan AI, sementara mode demo tetap
+`src/menu.js` → `visibleSettingItems(true)` menyisakan Profil, Log Aktivitas, Notifikasi, dan AI, sementara mode demo tetap
 menampilkan ketiga belas halaman. Tesnya di `tests/unit/menu.test.js`; rute lama masih bisa dibuka
 langsung, jadi saat menyambungkan satu halaman, pindahkan key-nya keluar dari `mockSettingKeys`.
 

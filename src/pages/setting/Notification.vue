@@ -1,10 +1,10 @@
 <script setup>
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { Icon } from '@iconify/vue'
 import Page from '../../components/Page.vue'
 import Section from '../../components/Section.vue'
 import { t } from '../../i18n'
-import { user, updateNotification } from '../../api'
+import { user, updateNotification, loadProfile } from '../../api'
 import { showToast } from '../../toast'
 
 const rows = [
@@ -15,6 +15,15 @@ const rows = [
 ]
 const saved = () => user.config.notification || {}
 const state = reactive({ loading: false, ...Object.fromEntries(rows.map((row) => [row.key, !!saved()[row.key]])) })
+
+onMounted(async () => {
+  try {
+    await loadProfile()
+    rows.forEach((row) => (state[row.key] = !!saved()[row.key]))
+  } catch (error) {
+    showToast(error.message, 'error')
+  }
+})
 
 // Saves on every toggle; a failed save puts the switches back.
 async function save() {

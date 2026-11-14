@@ -8,10 +8,11 @@ Tanpa pengaturan ini, web berjalan dalam **mode demo** (tanpa login, data tiruan
 ## 1. Supabase (database dan login)
 
 1. Buat proyek di https://supabase.com/dashboard.
-2. Buka **SQL Editor** dan jalankan isi tiga file ini, berurutan:
+2. Buka **SQL Editor** dan jalankan isi empat file ini, berurutan:
    - `supabase/migrations/0001_profiles.sql`
    - `supabase/migrations/0002_core.sql`
    - `supabase/migrations/0003_chats.sql`
+   - `supabase/migrations/0004_notification_activity.sql`
 3. Buka **Project Settings → API** dan catat tiga nilai: **Project URL**, **anon public key**, **service_role key**.
 4. Buka **Authentication → URL Configuration**, isi **Site URL** dengan alamat Vercel (mis. `https://jawabin.vercel.app`).
 5. Opsional, login Google: **Authentication → Providers → Google**, isi OAuth client dari Google Cloud.

@@ -220,9 +220,18 @@ function paginate(list, page = 1, limit = 20) {
 }
 
 export async function updateNotification(values) {
+  if (authEnabled) {
+    user.config.notification = (await request('PUT', '/profile/notification', values)).notification
+    return
+  }
   await wait(300)
   db.notification = { ...values }
   sync()
+}
+
+export async function loadProfile() {
+  if (!authEnabled) return
+  user.config.notification = (await request('GET', '/profile')).notification
 }
 
 export async function getSessions({ page, limit }) {
@@ -372,11 +381,17 @@ export async function retryWebhook(id) {
 }
 
 export async function getOperators() {
+  if (authEnabled) return { data: { docs: [] } }
   await wait(200)
   return { data: { docs: [{ _id: 'o1', name: 'Rina' }] } }
 }
 
 export async function getActivities({ page, limit, operatorId, module, source, status, fromDate }) {
+  if (authEnabled) {
+    // Operators do not exist on the server yet, so operatorId is not sent.
+    const query = new URLSearchParams({ page, limit, module, source, status, fromDate })
+    return { data: await request('GET', `/activities?${query}`) }
+  }
   await wait()
   const list = db.activities.filter(
     (doc) =>

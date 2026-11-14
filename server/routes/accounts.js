@@ -2,6 +2,7 @@ import { HttpError, json, redirect } from '../http.js'
 import { db, check } from '../db.js'
 import { readState, signState } from '../crypto.js'
 import { authorizeUrl, connect } from '../instagram.js'
+import { logActivity } from '../activity.js'
 
 const accountDoc = (row) => ({
   _id: row.id, platform: row.platform, username: row.username, name: row.name, picture: row.picture,
@@ -33,6 +34,7 @@ export async function instagramCallback(url) {
     const existing = check(await db().from('accounts').select('user_id').eq('platform', 'instagram').eq('platform_user_id', account.platform_user_id).maybeSingle())
     if (existing && existing.user_id != userId) throw new HttpError(400, 'this Instagram account is connected to another Jawabin user')
     check(await db().from('accounts').upsert({ ...account, user_id: userId, platform: 'instagram' }, { onConflict: 'platform,platform_user_id' }))
+    await logActivity(userId, null, { module: 'account', action: 'connect', target: `@${account.username}`, detail: { platform: 'Instagram' } })
     return back({ connected: account.username })
   } catch (error) {
     return back({ error: error.message })
