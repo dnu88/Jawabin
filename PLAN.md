@@ -167,8 +167,8 @@ Butuh pemilik repo: ikuti `SETUP.md` (Supabase, variabel Vercel, aplikasi Meta d
 - Vitest ditambahkan (`vitest.config.js`, `tests/setup.js`), 79 tes unit di `tests/unit/`.
 - Playwright ditambahkan (`playwright.config.js`, `tests/e2e/demo.spec.js`) untuk mode demo.
 - `npm test` dan `npm run test:e2e` tersedia; `.github/workflows/test.yml` menjalankan keduanya.
-- Selesai bila: `npm test` lolos dan dijalankan di GitHub Actions pada setiap push. **Sisa satu hal:**
-  pastikan workflow hijau pada push pertama (butuh akses repo; belum bisa diverifikasi dari sini).
+- Selesai bila: `npm test` lolos dan dijalankan di GitHub Actions pada setiap push. **Terpenuhi** —
+  run pertama pada commit `4480d97` lolos dua job (unit 10s, e2e ±1m; run `43576589350`).
 
 **Catatan lingkungan:** Vite 7 butuh Node 20.19+ / 22.12+; repo di VPS ini dijalankan dengan Node 26
 dari toolchain Hermes. Playwright lokal memakai Chrome sistem (`PLAYWRIGHT_CHANNEL=chrome`), di CI
