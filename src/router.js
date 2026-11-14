@@ -30,14 +30,15 @@ const settingChildren = settingItems.map((item) => ({
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/user/setting/ai' },
+    { path: '/', redirect: '/user/dashboard' },
     { path: '/login', name: 'login', component: () => import('./pages/Login.vue') },
     {
       path: '/user',
       name: 'user',
       component: () => import('./layouts/User.vue'),
       children: [
-        { path: '', redirect: '/user/setting/ai' },
+        { path: '', redirect: '/user/dashboard' },
+        { path: 'dashboard', name: 'user-dashboard', component: () => import('./pages/Dashboard.vue') },
         {
           path: 'setting',
           name: 'user-setting',
@@ -50,16 +51,16 @@ const router = createRouter({
         { path: ':pathMatch(.*)*', name: 'user-placeholder', component: Placeholder },
       ],
     },
-    { path: '/:pathMatch(.*)*', redirect: '/user/setting/ai' },
+    { path: '/:pathMatch(.*)*', redirect: '/user/dashboard' },
   ],
 })
 
 // With Supabase configured, everything except /login needs a session.
 router.beforeEach(async (to) => {
-  if (!authEnabled) return to.name == 'login' ? '/user/setting/ai' : true
+  if (!authEnabled) return to.name == 'login' ? '/user/dashboard' : true
   await authReady
   if (!session.value && to.name != 'login') return { name: 'login', query: { next: to.fullPath } }
-  if (session.value && to.name == 'login') return '/user/setting/ai'
+  if (session.value && to.name == 'login') return '/user/dashboard'
   return true
 })
 

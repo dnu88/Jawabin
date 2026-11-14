@@ -486,6 +486,36 @@ export async function getRules() {
   return db.rules.map((rule) => ({ ...rule, keywords: [...rule.keywords] }))
 }
 
+// Dashboard counters. Demo mode derives them from the same mock rows the other
+// pages show, so the numbers stay consistent with the lists.
+const todayStart = () => {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+const withinDays = (iso, days) => new Date(iso) >= new Date(todayStart().getTime() - (days - 1) * 86400000)
+
+export async function getDashboard() {
+  if (authEnabled) return request('GET', '/dashboard')
+  await wait()
+  const comments = db.comments
+  const replied = comments.filter((comment) => comment.status == 'resolved')
+  const autoReplied = comments.filter((comment) => ['rule', 'ai'].includes(comment.repliedBy))
+  const sum = (list) => list.reduce((total, doc) => total + (doc.token || 0), 0)
+  return {
+    range: { days: 7, from: new Date(todayStart().getTime() - 6 * 86400000).toISOString(), to: new Date().toISOString() },
+    commentsToday: comments.filter((comment) => new Date(comment.createdAt) >= todayStart()).length,
+    commentsWeek: comments.filter((comment) => withinDays(comment.createdAt, 7)).length,
+    pending: comments.filter((comment) => comment.status == 'pending').length,
+    replied: replied.length,
+    autoReplied: autoReplied.length,
+    autoRate: replied.length ? Math.round((autoReplied.length / replied.length) * 1000) / 1000 : 0,
+    tokensWeek: sum(db.usage.filter((doc) => withinDays(doc.createdAt, 7))),
+    tokensTotal: sum(db.usage),
+    accounts: db.accounts.length,
+  }
+}
+
 export async function saveRule(id, values) {
   if (authEnabled) return id ? request('PUT', `/rules/${id}`, values) : request('POST', '/rules', values)
   await wait(500)

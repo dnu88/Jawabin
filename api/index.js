@@ -2,12 +2,14 @@ import { HttpError, json } from '../server/http.js'
 import { requireUser } from '../server/db.js'
 import { getAi, getUsage, getUsageSummary, putAi } from '../server/routes/ai.js'
 import { deleteAccount, instagramAuthorize, instagramCallback, listAccounts } from '../server/routes/accounts.js'
+import { getDashboard } from '../server/routes/dashboard.js'
 import { listComments, replyComment, updateComment } from '../server/routes/comments.js'
 import { createRule, deleteRule, listRules, updateRule } from '../server/routes/rules.js'
 import { receiveWebhook, verifyWebhook } from '../server/routes/webhook.js'
 
 // Routes that need a signed-in user: handler(user, body, url, id).
 const routes = [
+  ['GET', 'dashboard', getDashboard],
   ['GET', 'ai', getAi],
   ['PUT', 'ai', putAi],
   ['GET', 'ai/usage', getUsage],

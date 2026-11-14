@@ -57,6 +57,23 @@ test.describe('demo mode', () => {
     await expect(page).toHaveURL(/\/user\/(comment|conversation|contact)/)
   })
 
+  test('the app opens on the dashboard', async ({ page }) => {
+    await page.goto('/')
+    await expect(page).toHaveURL(/\/user\/dashboard$/)
+    await expect(page.locator('h1')).toContainText(/dashboard/i)
+  })
+
+  test('the dashboard shows real counters, not placeholders', async ({ page }) => {
+    await page.goto('/user/dashboard')
+    await page.waitForLoadState('networkidle')
+    // Six cards, each with a number rendered from src/api.js demo data.
+    const values = page.locator('.tabular-nums')
+    await expect(values).toHaveCount(6)
+    for (const text of await values.allInnerTexts()) {
+      expect(text.trim()).toMatch(/^\d[\d.,]*%?$/)
+    }
+  })
+
   test('no horizontal scroll on a phone-sized viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     for (const route of ['/user/comment', '/user/setting/ai', '/user/account']) {

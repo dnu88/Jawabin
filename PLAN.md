@@ -57,6 +57,7 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 | Fitur | Tampilan | Rute server |
 | --- | --- | --- |
 | Login, daftar, keluar, ganti password | `pages/Login.vue`, `pages/setting/Profile.vue` | Supabase Auth langsung dari browser |
+| Dashboard | `pages/Dashboard.vue` | `GET /dashboard` |
 | Pengaturan AI + riwayat token | `pages/setting/AI.vue` | `GET/PUT /ai`, `GET /ai/usage`, `GET /ai/usage/summary` |
 | Integrasi Akun (Instagram) | `pages/Account.vue` | `GET /accounts`, `DELETE /accounts/:id`, `GET /instagram/authorize`, `GET /instagram/callback` |
 | Komentar | `pages/Comment.vue` | `GET /comments`, `PUT /comments/:id`, `POST /comments/:id/reply` |
@@ -70,7 +71,7 @@ Key TikWM, Redeem, Aplikasi Terhubung. Semuanya di `src/pages/setting/`, datanya
 
 **C. Belum ditulis** (rute jatuh ke `pages/Placeholder.vue`)
 
-Dashboard, Laporan, Percakapan (DM), Kontak, Asisten AI, Konten Live, Konten Terjadwal, Storage, Template Automasi,
+Laporan, Percakapan (DM), Kontak, Asisten AI, Konten Live, Konten Terjadwal, Storage, Template Automasi,
 Akun Operator, Riset TikTok/Threads, Affiliate, Upgrade dan pembayaran, platform selain Instagram.
 
 ## Yang sudah dan belum diuji
@@ -174,11 +175,19 @@ Butuh pemilik repo: ikuti `SETUP.md` (Supabase, variabel Vercel, aplikasi Meta d
 dari toolchain Hermes. Playwright lokal memakai Chrome sistem (`PLAYWRIGHT_CHANNEL=chrome`), di CI
 memakai Chromium yang diunduh.
 
-### 2. Dashboard
+### 2. Dashboard — **selesai di kode, angka belum diverifikasi di Supabase nyata**
 
-- Rute `GET /dashboard`: jumlah komentar hari ini / 7 hari, persentase terbalas otomatis, token AI terpakai, jumlah akun.
-- Halaman `src/pages/Dashboard.vue`; ubah redirect awal dari `/user/setting/ai` ke `/user/dashboard`.
-- Selesai bila: angka di Dashboard cocok dengan isi tabel `comments` dan `ai_usage`.
+- Rute `GET /dashboard` (`server/routes/dashboard.js`): komentar hari ini, 7 hari, menunggu balasan,
+  sudah dibalas, dibalas otomatis + persentasenya, token AI minggu ini dan sepanjang waktu, jumlah akun.
+  Semua query memakai `head:true` (tanpa menarik baris) dan selalu `.eq('user_id', …)`.
+- Halaman `src/pages/Dashboard.vue`: enam kartu, skeleton saat memuat, ajakan menghubungkan akun bila
+  belum ada akun. Awal aplikasi (`/`, `/user`, setelah login) sekarang ke `/user/dashboard`.
+- Mode demo menghitung angka dari baris mock yang sama dengan halaman lain, jadi konsisten dengan daftar.
+- Tes: `tests/unit/dashboard.test.js` (6 tes; menghitung dari baris nyata lewat fake Supabase, termasuk
+  memastikan setiap query membawa `user_id`), plus dua tes e2e (aplikasi mendarat di dashboard, enam
+  kartu berisi angka).
+- Selesai bila: angka di Dashboard cocok dengan isi tabel `comments` dan `ai_usage`. **Itu bagian yang
+  belum bisa dibuktikan di sini** — butuh kredensial Supabase (langkah 0).
 
 ### 3. Percakapan (DM Instagram)
 
