@@ -41,6 +41,11 @@ vi.mock('@supabase/supabase-js', () => {
         for (const row of rows) Object.assign(row, q.payload)
         return { data: rows, error: null }
       }
+      if (q.mode == 'delete') {
+        const rows = matches(table, q.filters)
+        state[table] = list(table).filter((row) => !rows.includes(row))
+        return { data: rows, error: null }
+      }
       const rows = matches(table, q.filters)
       let page = rows
       if (q.range) page = rows.slice(q.range[0], q.range[1] + 1)
@@ -66,6 +71,10 @@ vi.mock('@supabase/supabase-js', () => {
       update: (row) => {
         q.mode = 'update'
         q.payload = row
+        return api
+      },
+      delete: () => {
+        q.mode = 'delete'
         return api
       },
       eq: (column, value) => {
@@ -110,7 +119,7 @@ vi.mock('../../server/instagram.js', () => ({ sendMessage: vi.fn() }))
 
 const { sendMessage } = await import('../../server/instagram.js')
 const { generate, loadSettings, logUsage } = await import('../../server/ai.js')
-const { WINDOW_MS, receiveMessage, windowOpen } = await import('../../server/chat.js')
+const { WINDOW_MS, MAX_TEXT_BYTES, textBytes, receiveMessage, windowOpen } = await import('../../server/chat.js')
 const { getChat, listChats, sendChatMessage } = await import('../../server/routes/chats.js')
 
 const HOUR = 3600000
@@ -227,6 +236,55 @@ describe('receiveMessage', () => {
     const failed = state.messages.find((row) => row.direction == 'out')
     expect(failed.error).toMatch(/outside window/)
   })
+
+  // The following shapes are the ones Meta documents for messaging webhooks.
+  it('ignores the echo of our own outgoing message (is_echo)', async () => {
+    state.rules = [keywordRule()]
+    const result = await receiveMessage(account, inbound({ message: { mid: 'mid-echo', text: 'Bisa kak', is_echo: true } }))
+    expect(result.ignored).toBe(true)
+    expect(state.messages).toHaveLength(0)
+  })
+
+  it('ignores the test message you send to yourself (is_self)', async () => {
+    const result = await receiveMessage(account, inbound({ message: { mid: 'mid-self', text: 'tes', is_self: true } }))
+    expect(result.ignored).toBe(true)
+    expect(state.messages).toHaveLength(0)
+  })
+
+  it('removes a stored message when Meta reports it deleted', async () => {
+    state.rules = [keywordRule()]
+    await receiveMessage(account, inbound({ message: { mid: 'mid-gone', text: 'salah kirim' } }))
+    expect(state.messages.filter((row) => row.direction == 'in')).toHaveLength(1)
+
+    const result = await receiveMessage(account, inbound({ message: { mid: 'mid-gone', is_deleted: true } }))
+    expect(result.deleted).toBe(true)
+    expect(state.messages.filter((row) => row.direction == 'in')).toHaveLength(0)
+  })
+
+  it('stores an attachments-only message without asking a rule to answer it', async () => {
+    state.rules = [keywordRule()]
+    const result = await receiveMessage(
+      account,
+      inbound({ message: { mid: 'mid-media', attachments: [{ type: 'image', payload: { url: 'https://example.test/a.jpg' } }] } }),
+    )
+    expect(result.replied).toBe(false)
+    expect(state.messages).toHaveLength(1)
+    expect(state.messages[0]).toMatchObject({ direction: 'in', text: '' })
+    expect(sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('ignores an unsupported message that has no text', async () => {
+    const result = await receiveMessage(account, inbound({ message: { mid: 'mid-unsup', is_unsupported: true } }))
+    expect(result.ignored).toBe(true)
+    expect(state.messages).toHaveLength(0)
+  })
+
+  it('measures the text limit in UTF-8 bytes, not characters', () => {
+    expect(MAX_TEXT_BYTES).toBe(1000)
+    expect(textBytes('a')).toBe(1)
+    expect(textBytes('🤔')).toBe(4)
+    expect(textBytes('a'.repeat(1000))).toBe(1000)
+  })
 })
 
 describe('chat routes', () => {
@@ -277,6 +335,15 @@ describe('chat routes', () => {
   it('rejects an empty message', async () => {
     seedChat()
     await expect(sendChatMessage(user, { text: '   ' }, null, 'chat-1')).rejects.toThrowError(/message is required/)
+  })
+
+  it('rejects a message over 1000 UTF-8 bytes before calling Instagram', async () => {
+    seedChat()
+    // 251 emoji = 1004 bytes, 251 characters: characters would have passed.
+    const tooLong = '🤔'.repeat(251)
+    expect(tooLong.length).toBeLessThan(1000)
+    await expect(sendChatMessage(user, { text: tooLong }, null, 'chat-1')).rejects.toThrowError(/1000 bytes/)
+    expect(sendMessage).not.toHaveBeenCalled()
   })
 
   it('refuses to send outside the 24-hour window', async () => {

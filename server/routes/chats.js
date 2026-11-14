@@ -1,7 +1,7 @@
 import { HttpError, json, pageParams, paged } from '../http.js'
 import { db, check } from '../db.js'
 import { sendMessage } from '../instagram.js'
-import { windowOpen } from '../chat.js'
+import { MAX_TEXT_BYTES, textBytes, windowOpen } from '../chat.js'
 
 const chatDoc = (row) => ({
   _id: row.id,
@@ -58,8 +58,9 @@ export async function getChat(user, _body, _url, id) {
 // Manual reply. Meta rejects anything outside the 24-hour window, so refuse it
 // here with a message the UI can show instead of a provider error.
 export async function sendChatMessage(user, body, _url, id) {
-  const text = String(body.text || '').trim().slice(0, 1000)
+  const text = String(body.text || '').trim()
   if (!text) throw new HttpError(400, 'message is required')
+  if (textBytes(text) > MAX_TEXT_BYTES) throw new HttpError(400, 'message is too long (1000 bytes max)')
   const chat = await ownChat(user, id)
   if (!windowOpen(chat)) throw new HttpError(400, 'the 24-hour reply window has closed')
   await sendMessage(chat.accounts, chat.participant_id || chat.platform_chat_id, text)

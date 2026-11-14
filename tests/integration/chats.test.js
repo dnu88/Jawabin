@@ -36,21 +36,19 @@ describe.skipIf(!enabled)('DM flow on a real Supabase stack', () => {
     return fetch(`${apiUrl}/api/webhook/meta`, { method: 'POST', headers, body: raw })
   }
 
-  const delivery = (mid, text = 'Bisa COD?') => ({
+  const delivery = (mid, text = 'Bisa COD?', extra = {}) => ({
     object: 'instagram',
     entry: [
       {
         id: IG_USER_ID,
         time: Math.floor(Date.now() / 1000),
-        changes: [
+        // Documented shape for messaging: entry[].messaging[].
+        messaging: [
           {
-            field: 'messages',
-            value: {
-              sender: { id: 'igsid-900' },
-              recipient: { id: IG_USER_ID },
-              timestamp: Date.now(),
-              message: { mid, text },
-            },
+            sender: { id: 'igsid-900' },
+            recipient: { id: IG_USER_ID },
+            timestamp: Date.now(),
+            message: { mid, text, ...extra },
           },
         ],
       },
@@ -206,6 +204,22 @@ describe.skipIf(!enabled)('DM flow on a real Supabase stack', () => {
     const body = await response.json()
     expect(body.docs).toHaveLength(1)
     expect(body.docs[0]).toMatchObject({ _id: chatId, participant: 'igsid-900', canReply: true, unread: 1 })
+  })
+
+  it('ignores the echo of our own reply (documented is_echo flag)', async () => {
+    const before = await admin.from('messages').select('*').eq('chat_id', chatId)
+    await postWebhook(delivery('mid-echo-1', 'Bisa kak, COD tersedia.', { is_echo: true }))
+    const after = await admin.from('messages').select('*').eq('chat_id', chatId)
+    expect(after.data).toHaveLength(before.data.length)
+  })
+
+  it('removes a message that Meta reports deleted', async () => {
+    await postWebhook(delivery('mid-to-delete', 'salah kirim'))
+    const stored = await admin.from('messages').select('*').eq('platform_message_id', 'mid-to-delete')
+    expect(stored.data).toHaveLength(1)
+    await postWebhook(delivery('mid-to-delete', undefined, { is_deleted: true }))
+    const gone = await admin.from('messages').select('*').eq('platform_message_id', 'mid-to-delete')
+    expect(gone.data).toHaveLength(0)
   })
 
   it('rejects the same request without a token', async () => {

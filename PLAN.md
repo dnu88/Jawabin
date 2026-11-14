@@ -90,16 +90,17 @@ Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di
 Tes otomatis di repo (sejak langkah 1 di bawah):
 
 ```
-npm test                 # Vitest, 115 tes unit, ~1 detik
+npm test                 # Vitest, 131 tes unit, ~1,4 detik
 npm run test:e2e         # Playwright, 31 tes mode demo (tanpa kredensial apa pun)
-npm run test:integration # 10 tes terhadap Supabase lokal + stub Graph (butuh Docker)
+npm run test:integration # 12 tes terhadap Supabase lokal + stub Graph (butuh Docker)
 ```
 
 `test:integration` menjalankan alur DM pada infrastruktur sungguhan: Postgres + Auth + PostgREST
 dari `supabase start`, migrasi 0001–0003, JWT GoTrue nyata, tanda tangan webhook HMAC nyata, dan
 HTTP nyata ke `api/index.js`. Hanya Instagram Graph yang diganti stub lokal yang merekam request,
-karena tanpa app Meta tidak ada yang bisa dipanggil. Hasil terakhir: **10/10 lolos**. Tes ini tidak
-masuk CI (butuh Docker dan ±2 GB image), jalankan manual:
+karena tanpa app Meta tidak ada yang bisa dipanggil. Fixture webhook-nya memakai bentuk yang
+didokumentasikan Meta (`entry[].messaging[]`), bukan bentuk karangan. Hasil terakhir: **12/12 lolos**.
+Tes ini tidak masuk CI (butuh Docker dan ±2 GB image), jalankan manual:
 
 ```
 supabase start            # di salinan proyek Supabase lokal
@@ -118,9 +119,10 @@ horizontal di 390px. Keduanya berjalan di `.github/workflows/test.yml` pada seti
 
 Belum pernah dijalankan:
 
-- Query Supabase apa pun (skema, RLS, trigger `handle_new_user`, embed `comments → accounts`).
-- OAuth Instagram, langganan webhook, balas komentar, dan **seluruh jalur DM** (`/me/messages`,
-  event `messages`, jendela 24 jam) — semuanya belum pernah bertemu API Meta sungguhan.
+- Query Supabase **produksi** apa pun (skema, RLS, trigger `handle_new_user`, embed `comments → accounts`).
+  Skema sudah terbukti jalan di Postgres lokal lewat tes integrasi, tapi belum pernah di proyek Supabase asli.
+- OAuth Instagram, langganan webhook, balas komentar, dan pengiriman DM ke **API Meta sungguhan**
+  (butuh app Meta + akun tester). Kontraknya sudah dicocokkan dengan dokumentasi resmi; lihat risiko 4 dan 9.
 - Panggilan ke penyedia AI.
 - Fungsi di Vercel sungguhan.
 
@@ -132,8 +134,12 @@ Belum pernah dijalankan:
    Pastikan query asli (mis. `hub.challenge`, `code`, `state`) tetap terbawa setelah rewrite.
 3. **Tanda tangan webhook.** `receiveWebhook` memakai `request.text()` untuk body mentah.
    Kalau Vercel sudah mem-parsing body lebih dulu, HMAC akan selalu gagal.
-4. **Instagram API.** Endpoint dan nama scope ditulis dari ingatan (Graph `v23.0`, scope `instagram_business_*`).
-   Cocokkan dengan dokumentasi Meta terbaru. `entry.id` webhook diasumsikan sama dengan `user_id` dari `/me`.
+4. **Instagram API — sudah dicek ke dokumentasi (Sep 2026), satu hal masih asumsi.** Yang cocok:
+   host `graph.instagram.com`, `POST /me/messages`, body `{recipient:{id}, message:{text}}`, balasan
+   `{recipient_id, message_id}`, batas teks 1000 **byte** UTF-8, scope `instagram_business_basic` +
+   `instagram_business_manage_messages` + `instagram_business_manage_comments`. Yang belum terbukti:
+   `entry.id` webhook dianggap sama dengan `user_id` dari `/me` — benar untuk pelanggan Business Login,
+   tapi tolong pastikan saat akun tester pertama tersambung (bandingkan dengan `GET /me?fields=id`).
 5. **Batas waktu webhook.** Balasan AI dijalankan sebelum webhook menjawab 200. Kalau penyedia lambat, Meta bisa
    mengirim ulang. Duplikat sudah ditangani lewat `unique (platform_comment_id)`, tapi pertimbangkan `waitUntil`.
 6. **Daftar model di `src/pages/setting/ai/providers.js`** disalin dari bundle sumber dan belum diverifikasi.
@@ -144,10 +150,17 @@ Belum pernah dijalankan:
    `insert` hanya di-`console.error` lalu webhook tetap menjawab 200 — Meta tidak akan mengirim ulang,
    jadi komentar bisa hilang tanpa jejak. Tes `tests/unit/webhook.test.js` mengunci perilaku ini apa
    adanya; putuskan apakah mau dibiarkan (200) atau dibuat 500 agar Meta mencoba lagi.
-9. **DM ditulis dari ingatan.** Endpoint `POST /me/messages`, bentuk `recipient.id` (IGSID), nama
-   scope `instagram_business_manage_messages`, dan `subscribed_fields=comments,messages` belum dicocokkan
-   dengan dokumentasi Meta terbaru. Kalau salah, gejalanya 400 dari Instagram pada setiap kirim DM —
-   cek `server/instagram.js` lebih dulu sebelum menyalahkan UI.
+9. **DM — kontrak sudah diverifikasi ke dokumentasi, bukan lagi ingatan.** Dokumentasi Meta
+   (Instagram Platform → Webhooks, update Sep–Okt 2026) memakai `entry[].messaging[]` untuk pesan,
+   **bukan** `changes[]` bertanda `field: "messages"`. Versi pertama kode ini salah bentuk dan tidak
+   akan pernah menerima DM; sudah diperbaiki, dan webhook sekarang menerima keduanya. Ikut diperbaiki
+   dari dokumentasi yang sama: `is_echo` (pesan kita sendiri dipantulkan balik), `is_self` (pesan uji),
+   `is_deleted` (tombstone → baris dihapus), pesan tanpa teks (lampiran saja), batas 1000 byte, dan
+   kode error Meta (`code`/`error_subcode`, mis. `10/2534022` untuk di luar jendela).
+   Sisa yang belum bisa dibuktikan tanpa app sungguhan: (a) jendela 24 jam — Meta mengizinkan sampai
+   7 hari untuk iklan klik-ke-DM, kode ini sengaja konservatif 24 jam; (b) `messaging_postbacks`,
+   `messaging_referrals`, dan `messaging_seen` belum ditangani; (c) `admin_text`/handoff notice
+   diabaikan (tidak punya `mid`).
 
 ## Konvensi
 
@@ -172,6 +185,13 @@ Belum pernah dijalankan:
   ke `ai_usage` dengan tipe `chat`, bukan `content`.
 - **Basis URL Instagram bisa ditimpa.** `INSTAGRAM_GRAPH_BASE` (default `https://graph.instagram.com/v23.0`)
   hanya dipakai tes integrasi untuk menunjuk stub lokal; jangan diisi di produksi.
+- **Bentuk payload webhook mengikuti dokumentasi Meta, bukan tebakan.** Komentar datang sebagai
+  `entry[].changes[]` berisi `field: "comments"`; contoh Business Login juga menaruh `field`/`value`
+  langsung di `entry`, jadi keduanya diterima. Pesan datang sebagai `entry[].messaging[]`; pembungkus
+  lama (`changes[]` + `field: "messages"`) tetap diterima supaya tidak pecah kalau Meta berubah lagi.
+  `message.is_echo` dan `is_self` diabaikan, `is_deleted` menghapus baris yang sudah tersimpan, pesan
+  lampiran tanpa teks disimpan tapi tidak diumpankan ke mesin aturan, dan batas teks dihitung
+  `textBytes()` — 1000 **byte** UTF-8, bukan 1000 karakter.
 - **Rute baru**: tambah satu baris di array `routes` di `api/index.js`. Tetap satu function (batas paket gratis Vercel).
   Untuk rute yang mengubah data, isi elemen keempat `[modul, aksi]` supaya tercatat di Log Aktivitas;
   pakai pasangan yang punya kunci `activity.event.<modul>_<aksi>` di `src/locales/*.json`.
@@ -233,20 +253,23 @@ memakai Chromium yang diunduh.
 - Tampilan `src/pages/Conversation.vue`: daftar percakapan + thread, badge "jendela tutup", kirim
   manual, penanda balasan otomatis, dan pesan gagal tampil di thread. `Automation.vue` dapat pilihan
   "Balas di" (komentar / DM / keduanya) beserta badge di daftar aturan.
-- Tes: `tests/unit/chat.test.js` (16 tes: jendela 24 jam, idempotensi, echo pesan sendiri, aturan
-  komentar tidak menjawab DM, AI + `ai_usage` tipe chat, kegagalan pengiriman, rute list/get/send),
-  `tests/unit/webhook.test.js` (+5 tes pengiriman DM), `tests/unit/autoreply.test.js` (+4 tes kanal),
+- Tes: `tests/unit/chat.test.js` (23 tes: jendela 24 jam, idempotensi, `is_echo`/`is_self`,
+  `is_deleted`, lampiran tanpa teks, batas 1000 byte, aturan komentar tidak menjawab DM, AI +
+  `ai_usage` tipe chat, kegagalan pengiriman, rute list/get/send), `tests/unit/webhook.test.js`
+  (+7 tes pengiriman DM termasuk bentuk `messaging[]` dan `changes[]` lama),
+  `tests/unit/instagram.test.js` (6 tes: URL/header/body `/me/messages`, override
+  `INSTAGRAM_GRAPH_BASE`, kode error Meta, `/replies`), `tests/unit/autoreply.test.js` (+4 tes kanal),
   dan 2 tes e2e (kirim pesan, jendela tutup).
 - Selesai bila: DM masuk tampil, bisa dibalas manual, dan terbalas otomatis oleh aturan. **Terbukti
-  sampai database nyata** lewat `npm run test:integration` (10/10 lolos): webhook bertanda tangan
-  asli menyimpan chat + dua pesan di Postgres, aturan DM mengirim ke Graph dengan header `Bearer`
-  dan body `{recipient, message}`, dedupe `mid` bekerja, `GET /api/chats` jalan dengan JWT GoTrue
-  asli, 401 tanpa token, unread jadi 0 saat thread dibuka, kirim manual sukses, kirim di luar jendela
-  24 jam ditolak 400 tanpa memanggil Graph, user lain dapat 404, dan constraint `rules.channel`
-  serta index unik `platform_message_id` menolak data salah.
-- **Satu-satunya yang belum**: API Meta sungguhan. Nama endpoint `/me/messages`, bentuk
-  `recipient.id` (IGSID), scope, dan `subscribed_fields` ditulis dari ingatan — cocokkan dengan
-  dokumentasi Meta saat mencoba pertama kali (risiko nomor 9).
+  sampai database nyata** lewat `npm run test:integration` (12/12 lolos): webhook bertanda tangan
+  asli berbentuk `messaging[]` menyimpan chat + dua pesan di Postgres, aturan DM mengirim ke Graph
+  dengan header `Bearer` dan body `{recipient, message}`, dedupe `mid` bekerja, echo `is_echo`
+  diabaikan, `is_deleted` menghapus baris, `GET /api/chats` jalan dengan JWT GoTrue asli, 401 tanpa
+  token, unread jadi 0 saat thread dibuka, kirim manual sukses, kirim di luar jendela 24 jam ditolak
+  400 tanpa memanggil Graph, user lain dapat 404, dan constraint `rules.channel` serta index unik
+  `platform_message_id` menolak data salah.
+- **Yang belum**: memanggil API Meta sungguhan (butuh app + akun tester). Kontraknya sudah dicocokkan
+  dengan dokumentasi resmi — lihat risiko 4 dan 9 untuk sisa asumsi dan fitur yang belum ditangani.
 
 ### 4. Sambungkan halaman pengaturan kelompok B ke server
 

@@ -52,12 +52,20 @@ export async function receiveWebhook(request) {
   const payload = JSON.parse(raw)
   if (payload.object == 'instagram') {
     for (const entry of payload.entry || []) {
-      for (const change of entry.changes || []) {
+      // Documented shape for messaging (Business Login for Instagram): entry[].messaging[].
+      for (const event of entry.messaging || []) {
+        await handleMessage(entry.id, event).catch((error) => console.error('message failed', error.message))
+      }
+      // Comments arrive in changes[]; the Business Login examples also put
+      // field/value straight on the entry, so accept both.
+      const changes = entry.changes || (entry.field ? [{ field: entry.field, value: entry.value }] : [])
+      for (const change of changes) {
+        // Older/unified setups wrap messages as a change with field "messages".
         if (change.field == 'messages') {
           await handleMessage(entry.id, change.value).catch((error) => console.error('message failed', error.message))
           continue
         }
-        if (change.field != 'comments') continue
+        if (change.field != 'comments' && change.field != 'live_comments') continue
         await handleComment(entry.id, change.value).catch((error) => console.error('comment failed', error.message))
       }
     }

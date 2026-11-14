@@ -548,6 +548,7 @@ export async function sendChatMessage(id, text) {
   await wait(600)
   const chat = db.chats.find((item) => item._id == id)
   if (!chat) throw new Error('conversation not found')
+  if (new TextEncoder().encode(text).length > 1000) throw new Error('message is too long (1000 bytes max)')
   if (!replyWindowOpen(chat)) throw new Error('the 24-hour reply window has closed')
   const message = {
     _id: `msg-${Date.now()}`,

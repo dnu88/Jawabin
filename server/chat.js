@@ -5,6 +5,12 @@ import { matchRule } from './autoreply.js'
 import { sendMessage } from './instagram.js'
 
 export const WINDOW_MS = 24 * 60 * 60 * 1000
+// Meta: "Message text must be UTF-8 and be a 1000 bytes or less" — bytes, not characters.
+export const MAX_TEXT_BYTES = 1000
+
+export function textBytes(text) {
+  return Buffer.byteLength(String(text || ''), 'utf8')
+}
 
 const SYSTEM = [
   'You answer direct messages sent to a business account on Instagram.',
@@ -37,11 +43,21 @@ async function bumpChat(chatId, values) {
 // Stores an inbound DM and lets the chat rules answer it. The returned object is
 // only used by tests: the webhook answers 200 either way.
 export async function receiveMessage(account, value) {
+  const message = value?.message || {}
   const sender = String(value?.sender?.id || '')
-  const mid = String(value?.message?.mid || '')
-  const text = String(value?.message?.text || '').trim()
-  // Instagram also delivers our own outgoing messages back as an event.
-  if (!sender || !mid || sender == String(account.platform_user_id)) return { ignored: true }
+  const mid = String(message.mid || '')
+  const text = String(message.text || '').trim()
+  // Handoff notices carry no mid/text, and our own sends come back as echoes.
+  if (!sender || !mid) return { ignored: true }
+  if (message.is_echo || message.is_self || sender == String(account.platform_user_id)) return { ignored: true }
+  if (message.is_deleted) {
+    // Meta sends a tombstone when the person deletes; drop what we stored.
+    check(await db().from('messages').delete().eq('user_id', account.user_id).eq('platform_message_id', mid))
+    return { deleted: true }
+  }
+  // Attachments-only messages arrive without text; store them so the thread is
+  // complete, but never hand an empty string to the rule engine.
+  if (message.is_unsupported && !text) return { ignored: true }
   const at = value.timestamp ? new Date(Number(value.timestamp)).toISOString() : new Date().toISOString()
 
   const chat = check(
@@ -76,7 +92,7 @@ export async function receiveMessage(account, value) {
   // is enough for the badge. A wrong count is cosmetic, a lost message is not.
   await bumpChat(chat.id, { unread: (chat.unread || 0) + 1 })
 
-  return { chat, replied: await autoReplyChat(account, chat, { text, mid }) }
+  return { chat, replied: text ? await autoReplyChat(account, chat, { text, mid }) : false }
 }
 
 async function autoReplyChat(account, chat, message) {

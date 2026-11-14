@@ -188,29 +188,27 @@ describe('receiveWebhook (POST)', () => {
 })
 
 describe('direct message deliveries', () => {
+  // Documented shape (Business Login for Instagram): entry[].messaging[].
   const messagePayload = (value = {}) => ({
     object: 'instagram',
     entry: [
       {
         id: '17841400000000000',
         time: 1700000000,
-        changes: [
+        messaging: [
           {
-            field: 'messages',
-            value: {
-              sender: { id: '999' },
-              recipient: { id: '17841400000000000' },
-              timestamp: 1700000000000,
-              message: { mid: 'mid-1', text: 'Bisa COD?' },
-              ...value,
-            },
+            sender: { id: '999' },
+            recipient: { id: '17841400000000000' },
+            timestamp: 1700000000000,
+            message: { mid: 'mid-1', text: 'Bisa COD?' },
+            ...value,
           },
         ],
       },
     ],
   })
 
-  it('hands a message event to the chat module with the connected account', async () => {
+  it('hands a messaging[] event to the chat module with the connected account', async () => {
     const response = await receiveWebhook(signedPost(messagePayload()))
     expect(response.status).toBe(200)
     expect(state.chat).toHaveLength(1)
@@ -218,14 +216,24 @@ describe('direct message deliveries', () => {
     expect(state.chat[0][1]).toMatchObject({ message: { mid: 'mid-1', text: 'Bisa COD?' } })
   })
 
-  it('does not touch the comment path for a message event', async () => {
+  it('does not touch the comment path for a messaging[] event', async () => {
     await receiveWebhook(signedPost(messagePayload()))
     expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(0)
     expect(state.autoReply).toHaveLength(0)
   })
 
-  it('skips a message event without a mid', async () => {
-    const body = messagePayload({ message: { text: 'tanpa mid' } })
+  it('also accepts the older changes[] wrapper for messages', async () => {
+    const body = messagePayload()
+    const event = body.entry[0].messaging[0]
+    delete body.entry[0].messaging
+    body.entry[0].changes = [{ field: 'messages', value: event }]
+    await receiveWebhook(signedPost(body))
+    expect(state.chat).toHaveLength(1)
+  })
+
+  it('skips a message event without a mid (handoff notices have none)', async () => {
+    const body = messagePayload()
+    body.entry[0].messaging[0].message = { text: 'tanpa mid' }
     await receiveWebhook(signedPost(body))
     expect(state.chat).toHaveLength(0)
   })
@@ -236,12 +244,39 @@ describe('direct message deliveries', () => {
     expect(state.chat).toHaveLength(0)
   })
 
-  it('still answers 200 for both fields in one delivery', async () => {
+  it('handles comments and messages in one delivery', async () => {
     const body = payload()
-    body.entry[0].changes.push(messagePayload().entry[0].changes[0])
+    const messaging = messagePayload().entry[0].messaging[0]
+    body.entry[0].messaging = [messaging]
     const response = await receiveWebhook(signedPost(body))
     expect(response.status).toBe(200)
     expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
     expect(state.chat).toHaveLength(1)
+  })
+})
+
+describe('entry-level comment payload', () => {
+  // The Business Login examples put field/value straight on the entry.
+  it('accepts field/value on the entry instead of inside changes[]', async () => {
+    const body = {
+      object: 'instagram',
+      entry: [
+        {
+          id: '17841400000000000',
+          time: 1700000000,
+          field: 'comments',
+          value: { id: 'c-1', text: 'harga?', media: { id: 'm-1' }, from: { id: '999', username: 'pembeli' } },
+        },
+      ],
+    }
+    await receiveWebhook(signedPost(body))
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
+  })
+
+  it('treats live_comments like comments', async () => {
+    const body = payload()
+    body.entry[0].changes[0].field = 'live_comments'
+    await receiveWebhook(signedPost(body))
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
   })
 })

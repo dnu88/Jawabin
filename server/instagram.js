@@ -17,7 +17,14 @@ async function call(url, options = {}) {
     throw new HttpError(502, `Instagram did not answer: ${error.message}`)
   }
   const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new HttpError(400, `Instagram error: ${data.error?.message || data.error_message || response.status}`)
+  if (!response.ok) {
+    // Meta answers with {error:{message,type,code,error_subcode,fbtrace_id}}; the
+    // numeric code is what tells "outside window" (10/2534022) apart from a token
+    // problem, so keep it in the message the UI shows.
+    const error = data.error || {}
+    const code = [error.code, error.error_subcode].filter((value) => value != null && value !== '').join('/')
+    throw new HttpError(400, `Instagram error${code ? ` ${code}` : ''}: ${error.message || data.error_message || response.status}`)
+  }
   return data
 }
 
