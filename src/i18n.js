@@ -18,6 +18,15 @@ const messages = {
       soon: 'This page is not built yet.',
     },
     common: { cancel: 'Cancel', confirm: 'Confirm', close: 'Close' },
+    auth: {
+      login: { title: 'Sign in to your account', button: 'Sign In', switch: 'Don’t have an account?', action: 'Sign up' },
+      register: { title: 'Create your account', button: 'Sign Up', switch: 'Already have an account?', action: 'Sign in' },
+      subtitle: 'Manage your comments more efficiently',
+      name: 'Name', email: 'Email', password: 'Password', passwordHint: 'At least 8 characters',
+      or: 'or', google: 'Continue with Google', logout: 'Sign out',
+      confirm: 'Check your email and open the confirmation link, then sign in.',
+      required: 'Fill in every field', short: 'Password must be at least 8 characters',
+    },
   },
   id: {
     ...id,
@@ -34,6 +43,15 @@ const messages = {
       soon: 'Halaman ini belum dibuat.',
     },
     common: { cancel: 'Batal', confirm: 'Ya, lanjutkan', close: 'Tutup' },
+    auth: {
+      login: { title: 'Masuk ke akunmu', button: 'Masuk', switch: 'Belum punya akun?', action: 'Daftar' },
+      register: { title: 'Buat akunmu', button: 'Daftar', switch: 'Sudah punya akun?', action: 'Masuk' },
+      subtitle: 'Kelola komentar dengan lebih efisien',
+      name: 'Nama', email: 'Email', password: 'Password', passwordHint: 'Minimal 8 karakter',
+      or: 'atau', google: 'Lanjutkan dengan Google', logout: 'Keluar',
+      confirm: 'Cek email kamu dan buka link konfirmasinya, lalu masuk.',
+      required: 'Isi semua kolom', short: 'Password minimal 8 karakter',
+    },
   },
 }
 

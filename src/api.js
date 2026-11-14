@@ -4,6 +4,7 @@
 //   GET /ai/usage           -> getUsage
 // State lives in localStorage so the page behaves end to end without a server.
 import { reactive } from 'vue'
+import { authEnabled, updatePassword } from './auth'
 
 const KEY = 'jawabin-mock'
 const VERSION = 3
@@ -355,8 +356,9 @@ export async function verifyPhoneCode(code) {
 }
 
 export async function changePassword(password) {
-  await wait(700)
   if (password.length < 8) throw new Error('password must be at least 8 characters')
+  if (authEnabled) return updatePassword(password)
+  await wait(700)
 }
 
 export async function getApps() {

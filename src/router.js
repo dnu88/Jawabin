@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { settingItems } from './menu'
+import { authEnabled, authReady, session } from './auth'
 
 const Placeholder = () => import('./pages/Placeholder.vue')
 
@@ -26,10 +27,11 @@ const settingChildren = settingItems.map((item) => ({
   meta: { settingKey: item.key },
 }))
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/user/setting/ai' },
+    { path: '/login', name: 'login', component: () => import('./pages/Login.vue') },
     {
       path: '/user',
       name: 'user',
@@ -48,3 +50,14 @@ export default createRouter({
     { path: '/:pathMatch(.*)*', redirect: '/user/setting/ai' },
   ],
 })
+
+// With Supabase configured, everything except /login needs a session.
+router.beforeEach(async (to) => {
+  if (!authEnabled) return to.name == 'login' ? '/user/setting/ai' : true
+  await authReady
+  if (!session.value && to.name != 'login') return { name: 'login', query: { next: to.fullPath } }
+  if (session.value && to.name == 'login') return '/user/setting/ai'
+  return true
+})
+
+export default router

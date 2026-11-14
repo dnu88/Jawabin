@@ -1,12 +1,19 @@
 <script setup>
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { t, locale, setLocale } from '../i18n'
 import { user } from '../api'
+import { authEnabled, signOut } from '../auth'
 import { sidebarGroups, sidebarExtras } from '../menu'
 
 const route = useRoute()
+const router = useRouter()
+
+async function logout() {
+  await signOut().catch(() => {})
+  router.replace('/login')
+}
 
 function stored(key) {
   try {
@@ -162,6 +169,16 @@ const tabs = [
                 </span>
                 <input type="checkbox" class="toggle toggle-sm" :checked="dark" @change="toggleTheme" />
               </label>
+              <template v-if="authEnabled">
+                <div class="my-1 h-px bg-base-300" />
+                <button
+                  class="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-error rounded-bubble [--bubble-r:0.5rem] hover:bg-error/10 cursor-pointer"
+                  @click="logout"
+                >
+                  <Icon icon="mingcute:exit-line" class="text-base" />
+                  {{ t('auth.logout') }}
+                </button>
+              </template>
             </div>
           </div>
         </div>
