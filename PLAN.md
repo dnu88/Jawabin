@@ -88,8 +88,22 @@ Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di
 Tes otomatis di repo (sejak langkah 1 di bawah):
 
 ```
-npm test          # Vitest, 115 tes unit, ~1 detik
-npm run test:e2e  # Playwright, 31 tes mode demo (tanpa kredensial apa pun)
+npm test                 # Vitest, 115 tes unit, ~1 detik
+npm run test:e2e         # Playwright, 31 tes mode demo (tanpa kredensial apa pun)
+npm run test:integration # 10 tes terhadap Supabase lokal + stub Graph (butuh Docker)
+```
+
+`test:integration` menjalankan alur DM pada infrastruktur sungguhan: Postgres + Auth + PostgREST
+dari `supabase start`, migrasi 0001–0003, JWT GoTrue nyata, tanda tangan webhook HMAC nyata, dan
+HTTP nyata ke `api/index.js`. Hanya Instagram Graph yang diganti stub lokal yang merekam request,
+karena tanpa app Meta tidak ada yang bisa dipanggil. Hasil terakhir: **10/10 lolos**. Tes ini tidak
+masuk CI (butuh Docker dan ±2 GB image), jalankan manual:
+
+```
+supabase start            # di salinan proyek Supabase lokal
+supabase status -o env    # ambil API_URL, ANON_KEY, SERVICE_ROLE_KEY
+JAWABIN_INTEGRATION=1 SUPABASE_URL=… SUPABASE_ANON_KEY=… SUPABASE_SERVICE_ROLE_KEY=… \
+  npm run test:integration
 ```
 
 `npm test` mencakup `server/http.js` (pagination, `json`, `env`), `crypto.js` (AES-GCM bolak-balik,
@@ -154,6 +168,8 @@ Belum pernah dijalankan:
 - **Aturan punya kanal.** `rules.channel` = `comment` | `chat` | `both`; `matchRule(rules, target, channel)`
   menyaringnya, dan aturan lama tanpa kolom itu dianggap `comment`. Balasan DM yang memakai AI dicatat
   ke `ai_usage` dengan tipe `chat`, bukan `content`.
+- **Basis URL Instagram bisa ditimpa.** `INSTAGRAM_GRAPH_BASE` (default `https://graph.instagram.com/v23.0`)
+  hanya dipakai tes integrasi untuk menunjuk stub lokal; jangan diisi di produksi.
 - **Rute baru**: tambah satu baris di array `routes` di `api/index.js`. Tetap satu function (batas paket gratis Vercel).
 - **Teks**: jangan tulis teks langsung di template. Tambahkan kunci di `src/i18n.js` (ID dan EN) lalu pakai `t()`.
 - **Data tiruan**: kalau bentuk `seed()` di `src/api.js` berubah, naikkan `VERSION` supaya `localStorage` lama dibuang.
@@ -199,7 +215,7 @@ memakai Chromium yang diunduh.
 - Selesai bila: angka di Dashboard cocok dengan isi tabel `comments` dan `ai_usage`. **Itu bagian yang
   belum bisa dibuktikan di sini** — butuh kredensial Supabase (langkah 0).
 
-### 3. Percakapan (DM Instagram) — **selesai di kode, belum diuji ke Instagram nyata**
+### 3. Percakapan (DM Instagram) — **selesai di kode, teruji sampai database nyata**
 
 - Scope `instagram_business_manage_messages` ditambahkan, dan langganan webhook kini
   `comments,messages` (`server/instagram.js`).
@@ -217,10 +233,16 @@ memakai Chromium yang diunduh.
   komentar tidak menjawab DM, AI + `ai_usage` tipe chat, kegagalan pengiriman, rute list/get/send),
   `tests/unit/webhook.test.js` (+5 tes pengiriman DM), `tests/unit/autoreply.test.js` (+4 tes kanal),
   dan 2 tes e2e (kirim pesan, jendela tutup).
-- Selesai bila: DM masuk tampil, bisa dibalas manual, dan terbalas otomatis oleh aturan. **Belum
-  dibuktikan**: butuh aplikasi Meta dengan akun tester (langkah 0). Yang belum terverifikasi di kode:
-  nama endpoint `/me/messages`, bentuk `recipient.id` (IGSID), dan perilaku `subscribed_fields`
-  ditulis dari ingatan — cocokkan dengan dokumentasi Meta terbaru saat mencoba pertama kali.
+- Selesai bila: DM masuk tampil, bisa dibalas manual, dan terbalas otomatis oleh aturan. **Terbukti
+  sampai database nyata** lewat `npm run test:integration` (10/10 lolos): webhook bertanda tangan
+  asli menyimpan chat + dua pesan di Postgres, aturan DM mengirim ke Graph dengan header `Bearer`
+  dan body `{recipient, message}`, dedupe `mid` bekerja, `GET /api/chats` jalan dengan JWT GoTrue
+  asli, 401 tanpa token, unread jadi 0 saat thread dibuka, kirim manual sukses, kirim di luar jendela
+  24 jam ditolak 400 tanpa memanggil Graph, user lain dapat 404, dan constraint `rules.channel`
+  serta index unik `platform_message_id` menolak data salah.
+- **Satu-satunya yang belum**: API Meta sungguhan. Nama endpoint `/me/messages`, bentuk
+  `recipient.id` (IGSID), scope, dan `subscribed_fields` ditulis dari ingatan — cocokkan dengan
+  dokumentasi Meta saat mencoba pertama kali (risiko nomor 9).
 
 ### 4. Sambungkan halaman pengaturan kelompok B ke server
 

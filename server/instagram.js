@@ -2,7 +2,11 @@ import { HttpError, env } from './http.js'
 import { db, check } from './db.js'
 import { decrypt, encrypt } from './crypto.js'
 
-const GRAPH = 'https://graph.instagram.com/v23.0'
+// Optional override so integration tests can point at a local stand-in. In
+// production this stays unset and every call goes to Instagram.
+function graph() {
+  return process.env.INSTAGRAM_GRAPH_BASE || 'https://graph.instagram.com/v23.0'
+}
 export const SCOPES = 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages'
 
 async function call(url, options = {}) {
@@ -36,9 +40,9 @@ export async function connect(code, redirectUri) {
     `https://graph.instagram.com/access_token?${new URLSearchParams({ grant_type: 'ig_exchange_token', client_secret: env('INSTAGRAM_APP_SECRET'), access_token: short.access_token })}`,
   )
   const token = long.access_token
-  const me = await call(`${GRAPH}/me?${new URLSearchParams({ fields: 'user_id,username,name,profile_picture_url', access_token: token })}`)
+  const me = await call(`${graph()}/me?${new URLSearchParams({ fields: 'user_id,username,name,profile_picture_url', access_token: token })}`)
   // Ask Instagram to send this account's comment and message events to our webhook.
-  await call(`${GRAPH}/me/subscribed_apps?${new URLSearchParams({ subscribed_fields: 'comments,messages', access_token: token })}`, { method: 'POST' })
+  await call(`${graph()}/me/subscribed_apps?${new URLSearchParams({ subscribed_fields: 'comments,messages', access_token: token })}`, { method: 'POST' })
   return {
     platform_user_id: String(me.user_id),
     username: me.username || '',
@@ -70,7 +74,7 @@ export async function accountToken(account) {
 
 export async function replyToComment(account, commentId, message) {
   const token = await accountToken(account)
-  return call(`${GRAPH}/${encodeURIComponent(commentId)}/replies`, {
+  return call(`${graph()}/${encodeURIComponent(commentId)}/replies`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify({ message }),
@@ -81,7 +85,7 @@ export async function replyToComment(account, commentId, message) {
 // who wrote to us; Meta only accepts it inside the 24-hour reply window.
 export async function sendMessage(account, recipientId, text) {
   const token = await accountToken(account)
-  return call(`${GRAPH}/me/messages`, {
+  return call(`${graph()}/me/messages`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
     body: JSON.stringify({ recipient: { id: String(recipientId) }, message: { text } }),
