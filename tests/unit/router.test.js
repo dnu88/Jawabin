@@ -12,6 +12,7 @@ const spies = vi.hoisted(() => {
   return {
     ai: make(),
     getUser: vi.fn(),
+    rpc: vi.fn(async () => ({ data: true, error: null })),
     activity: {
       logActivity: vi.fn(async () => {}),
       listActivities: vi.fn(async () => new Response('{"hit":"listActivities"}')),
@@ -46,13 +47,13 @@ const spies = vi.hoisted(() => {
   }
 })
 
-vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ auth: { getUser: spies.getUser } }) }))
 vi.mock('../../server/routes/ai.js', () => spies.ai)
 vi.mock('../../server/routes/accounts.js', () => spies.accounts)
 vi.mock('../../server/routes/comments.js', () => spies.comments)
 vi.mock('../../server/routes/rules.js', () => spies.rules)
 vi.mock('../../server/routes/webhook.js', () => spies.webhook)
 vi.mock('../../server/activity.js', () => spies.activity)
+vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ auth: { getUser: spies.getUser }, rpc: spies.rpc }) }))
 vi.mock('../../server/routes/profile.js', () => spies.profile)
 
 const api = await import('../../api/index.js')
@@ -73,6 +74,7 @@ const call = (method, path, { token = 'good-token', body } = {}) => {
 beforeEach(() => {
   vi.clearAllMocks()
   spies.getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@b.c' } }, error: null })
+  spies.rpc.mockResolvedValue({ data: true, error: null })
 })
 
 describe('public routes', () => {
@@ -241,5 +243,52 @@ describe('account deletion', () => {
     const [user, body] = spies.profile.deleteProfile.mock.calls[0]
     expect(user.id).toBe('user-1')
     expect(body).toEqual({ confirm: 'a@b.c' })
+  })
+})
+
+describe('rate limit', () => {
+  const lastKey = () => spies.rpc.mock.calls.at(-1)[1]
+
+  it('counts ordinary routes per user in the default bucket', async () => {
+    await call('GET', '/api/rules')
+    expect(spies.rpc).toHaveBeenCalledWith('hit_rate_limit', { p_key: 'user:user-1:default', p_window_seconds: 60, p_limit: 120 })
+  })
+
+  it('gives costly routes their own, tighter bucket', async () => {
+    await call('PUT', '/api/ai', { body: {} })
+    expect(lastKey()).toEqual({ p_key: 'user:user-1:PUT ai', p_window_seconds: 60, p_limit: 10 })
+    await call('POST', '/api/profile/delete', { body: {} })
+    expect(lastKey()).toMatchObject({ p_key: 'user:user-1:POST profile/delete', p_window_seconds: 3600, p_limit: 5 })
+  })
+
+  it('answers 429 and skips the handler once the allowance is used up', async () => {
+    spies.rpc.mockResolvedValue({ data: false, error: null })
+    const response = await call('POST', '/api/rules', { body: { name: 'x' } })
+    expect(response.status).toBe(429)
+    expect(spies.rules.createRule).not.toHaveBeenCalled()
+  })
+
+  it('limits the public OAuth callback by IP address', async () => {
+    await call('GET', '/api/instagram/callback?code=abc&state=s', { token: null })
+    expect(lastKey().p_key).toMatch(/^ip:.+:callback$/)
+    spies.rpc.mockResolvedValue({ data: false, error: null })
+    const response = await call('GET', '/api/instagram/callback?code=abc&state=s', { token: null })
+    expect(response.status).toBe(429)
+    expect(spies.accounts.instagramCallback).toHaveBeenCalledTimes(1)
+  })
+
+  it('never limits health checks or Meta webhooks', async () => {
+    await call('GET', '/api/health', { token: null })
+    await call('POST', '/api/webhook/meta', { token: null, body: { object: 'instagram' } })
+    expect(spies.rpc).not.toHaveBeenCalled()
+  })
+
+  it('lets requests through when the limiter is broken', async () => {
+    const quiet = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    spies.rpc.mockResolvedValue({ data: null, error: { message: 'function hit_rate_limit does not exist' } })
+    expect((await call('GET', '/api/rules')).status).toBe(200)
+    spies.rpc.mockRejectedValue(new Error('network down'))
+    expect((await call('GET', '/api/rules')).status).toBe(200)
+    quiet.mockRestore()
   })
 })

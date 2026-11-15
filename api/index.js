@@ -9,6 +9,7 @@ import { createRule, deleteRule, listRules, updateRule } from '../server/routes/
 import { receiveWebhook, verifyWebhook } from '../server/routes/webhook.js'
 import { deleteProfile, getProfile, putNotification } from '../server/routes/profile.js'
 import { listActivities, logActivity } from '../server/activity.js'
+import { CALLBACK_LIMIT, LIMITS, clientIp, rateLimit } from '../server/ratelimit.js'
 
 // Routes that need a signed-in user: handler(user, body, url, id).
 // The optional fourth entry [module, action] records the call in the activity log.
@@ -56,12 +57,17 @@ async function handle(request) {
 
   if (path == 'health') return json({ ok: true })
   if (path == 'webhook/meta') return method == 'GET' ? verifyWebhook(url) : receiveWebhook(request)
-  if (path == 'instagram/callback' && method == 'GET') return instagramCallback(url)
+  if (path == 'instagram/callback' && method == 'GET') {
+    await rateLimit(`ip:${clientIp(request)}:callback`, CALLBACK_LIMIT)
+    return instagramCallback(url)
+  }
 
   for (const [routeMethod, pattern, handler, activity] of routes) {
     const found = routeMethod == method && match(pattern, path)
     if (!found) continue
     const user = await requireUser(request)
+    const bucket = `${routeMethod} ${pattern}`
+    await rateLimit(`user:${user.id}:${LIMITS[bucket] ? bucket : 'default'}`, LIMITS[bucket] || LIMITS.default)
     const body = ['POST', 'PUT'].includes(method) ? await request.json().catch(() => ({})) : {}
     if (!activity) return handler(user, body, url, found.id)
     const [module, action] = activity
