@@ -1,6 +1,7 @@
 import { HttpError } from './http.js'
 import { db, check } from './db.js'
 import { decrypt } from './crypto.js'
+import { lookup } from 'node:dns/promises'
 
 const openAiBases = {
   openai: 'https://api.openai.com/v1',
@@ -12,17 +13,40 @@ const openAiBases = {
 }
 export const providerTypes = ['gemini', 'anthropic', '9router', ...Object.keys(openAiBases)]
 
-// Custom endpoints are fetched from the server, so keep them to public https hosts.
-export function checkEndpoint(value) {
+const privateV4 = [/^0\./, /^10\./, /^127\./, /^169\.254\./, /^192\.168\./, /^100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./]
+const inCidr172 = (ip) => {
+  const [, second] = ip.split('.').map(Number)
+  return second >= 16 && second <= 31
+}
+const isPrivateAddress = (address) => {
+  const ip = String(address).toLowerCase()
+  if (ip.includes(':')) return ip === '::1' || ip === '::' || /^f[cd]/.test(ip) || /^fe[89ab]/.test(ip) || ip.startsWith('::ffff:')
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return true
+  return privateV4.some((pattern) => pattern.test(ip)) || inCidr172(ip)
+}
+
+// Custom endpoints are fetched from the server, so they must resolve to public
+// addresses. Name-only checks are not enough: a public-looking hostname can
+// resolve to loopback or link-local (e.g. 127.0.0.1.nip.io).
+export async function checkEndpoint(value) {
   let url
   try {
     url = new URL(value)
   } catch {
     throw new HttpError(400, 'endpoint is not a valid URL')
   }
-  const host = url.hostname
-  const isPrivate = host == 'localhost' || host.endsWith('.local') || host.endsWith('.internal') || /^[\d.]+$/.test(host) || host.includes(':')
-  if (url.protocol != 'https:' || isPrivate) throw new HttpError(400, 'endpoint must be a public https address')
+  const host = url.hostname.replace(/^\[|\]$/g, '')
+  const isLocalName = host == 'localhost' || host.endsWith('.local') || host.endsWith('.internal')
+  if (url.protocol != 'https:' || isLocalName) throw new HttpError(400, 'endpoint must be a public https address')
+  let addresses
+  try {
+    addresses = await lookup(host, { all: true, verbatim: true })
+  } catch {
+    throw new HttpError(400, 'endpoint host could not be resolved')
+  }
+  if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) {
+    throw new HttpError(400, 'endpoint must be a public https address')
+  }
   return url.toString().replace(/\/$/, '')
 }
 
@@ -33,13 +57,21 @@ async function post(url, headers, body) {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify(body),
+      redirect: 'error',
       signal: AbortSignal.timeout(20000),
     })
-  } catch (error) {
-    throw new HttpError(502, `AI provider did not answer: ${error.message}`)
+  } catch {
+    // Fetch errors can carry the full URL; never forward them to the client.
+    throw new HttpError(502, 'AI provider did not answer')
   }
   const raw = await response.json().catch(() => ({}))
-  if (!response.ok) throw new HttpError(400, `AI provider error ${response.status}: ${raw.error?.message || raw.message || 'request failed'}`)
+  if (!response.ok) {
+    // Provider errors can echo the request URL or credentials back at us.
+    const secrets = Object.values(headers).map((value) => String(value).replace(/^Bearer /, ''))
+    let message = String(raw.error?.message || raw.message || 'request failed').replace(/https?:\/\/\S+/g, '[redacted URL]')
+    for (const secret of secrets.filter(Boolean)) message = message.replaceAll(secret, '[redacted]')
+    throw new HttpError(400, `AI provider error ${response.status}: ${message}`)
+  }
   return raw
 }
 
@@ -64,7 +96,7 @@ export async function generate({ type, url, model, token }, { system = '', user 
     const tokens = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
     return { text: text.trim(), tokens, request, response }
   }
-  const base = ['openai', '9router'].includes(type) && url ? checkEndpoint(url) : openAiBases[type]
+  const base = ['openai', '9router'].includes(type) && url ? await checkEndpoint(url) : openAiBases[type]
   if (!base) throw new HttpError(400, 'endpoint is required for this provider')
   const messages = [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: user }]
   const request = { model, messages }

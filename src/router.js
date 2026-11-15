@@ -30,8 +30,10 @@ const settingChildren = settingItems.map((item) => ({
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/user/dashboard' },
+    { path: '/', name: 'home', component: () => import('./pages/Home.vue') },
     { path: '/login', name: 'login', component: () => import('./pages/Login.vue') },
+    { path: '/privacy', name: 'privacy', component: () => import('./pages/Legal.vue') },
+    { path: '/terms', name: 'terms', component: () => import('./pages/Legal.vue') },
     {
       path: '/user',
       name: 'user',
@@ -56,11 +58,14 @@ const router = createRouter({
   ],
 })
 
-// With Supabase configured, everything except /login needs a session.
+// With Supabase configured, everything except the public pages needs a session.
+// The public pages exist so a visitor can read who runs the service and what it
+// does before being asked for credentials.
+const PUBLIC = new Set(['home', 'login', 'privacy', 'terms'])
 router.beforeEach(async (to) => {
-  if (!authEnabled) return to.name == 'login' ? '/user/dashboard' : true
+  if (!authEnabled) return to.name == 'login' ? '/' : true
   await authReady
-  if (!session.value && to.name != 'login') return { name: 'login', query: { next: to.fullPath } }
+  if (!session.value && !PUBLIC.has(to.name)) return { name: 'login', query: { next: to.fullPath } }
   if (session.value && to.name == 'login') return '/user/dashboard'
   return true
 })

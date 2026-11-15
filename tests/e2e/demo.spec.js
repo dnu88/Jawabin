@@ -57,10 +57,21 @@ test.describe('demo mode', () => {
     await expect(page).toHaveURL(/\/user\/(comment|conversation|contact)/)
   })
 
-  test('the app opens on the dashboard', async ({ page }) => {
+  test('anonymous visitors land on the public page, not a bare login form', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveURL(/\/user\/dashboard$/)
-    await expect(page.locator('h1')).toContainText(/dashboard/i)
+    await expect(page).toHaveURL(/\/$/)
+    // The public page must say who runs the service and what it does.
+    await expect(page.locator('h1')).toContainText(/komentar dan DM Instagram|Instagram comments and DMs/i)
+    await expect(page.getByRole('link', { name: /privasi|privacy/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /ketentuan|terms/i })).toBeVisible()
+  })
+
+  test('privacy and terms pages are public and readable', async ({ page }) => {
+    for (const path of ['/privacy', '/terms']) {
+      await page.goto(path)
+      await expect(page.locator('h1')).toBeVisible()
+      await expect(page.getByText(/danubudiarto88@gmail\.com/).first()).toBeVisible()
+    }
   })
 
   test('the dashboard shows real counters, not placeholders', async ({ page }) => {

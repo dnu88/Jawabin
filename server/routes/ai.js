@@ -18,7 +18,7 @@ export async function putAi(user, body) {
   if (body.isProvided) throw new HttpError(400, 'Jawabin tokens are not available yet, use your own API key')
   if (!providerTypes.includes(type)) throw new HttpError(400, 'unknown provider')
   if (!model) throw new HttpError(400, 'model is required')
-  const url = ['openai', '9router'].includes(type) && body.url ? checkEndpoint(String(body.url)) : ''
+  const url = ['openai', '9router'].includes(type) && body.url ? await checkEndpoint(String(body.url)) : ''
   if (!token) token = (await loadSettings(user.id))?.token || ''
   if (!token) throw new HttpError(400, 'API key is required')
 

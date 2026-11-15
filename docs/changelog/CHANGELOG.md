@@ -1,5 +1,25 @@
 # Changelog
 
+## Belum dirilis — halaman publik dan perbaikan keamanan
+
+### Perubahan kode
+
+- Halaman publik `/` menjelaskan layanan, operator, dan pemakaian akses Instagram
+  sebelum pengunjung diminta masuk; `/privacy` dan `/terms` berisi kebijakan nyata.
+  Rute lain tetap memerlukan sesi.
+- `server/ai.js`: endpoint AI kustom kini divalidasi lewat resolusi DNS (menolak
+  hostname yang mengarah ke loopback/privat, link-local metadata, IPv6 privat, dan
+  hasil DNS campuran), permintaan tidak mengikuti redirect, dan pesan galat
+  penyedia diredaksi sebelum dikirim ke klien.
+
+### Verifikasi
+
+- `npm test`: **190 passed** (17 file). `npx playwright test` (Chrome sistem):
+  **32 passed**. `npm run build`: sukses. `npm audit`: 0 kerentanan.
+- Domain `jawabin-kc75.vercel.app` sedang berstatus **unsafe** di Google Safe
+  Browsing; rincian bukti, hipotesis pemicu, dan langkah pemilik ada di
+  `docs/audit/safe-browsing-remediation.md`. Status ini **belum** selesai.
+
 ## Belum dirilis — Unified Login dan onboarding hosted
 
 ### Dokumentasi
