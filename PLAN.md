@@ -10,24 +10,26 @@ Tampilan dan teksnya direkonstruksi dari bundle publik Repliz (`repliz.com`), de
 
 Alur inti sudah ditulis ujung ke ujung: **login → hubungkan Instagram → komentar masuk → dibalas aturan atau AI**.
 Onboarding hosted Supabase + Vercel **sudah diverifikasi** (signup, konfirmasi email, login,
-API profil/dashboard/chats). Alur Instagram dan penyedia AI **belum terbukti pada layanan nyata**.
+API profil/dashboard/chats), begitu juga OAuth Unified Login dan langganan webhook. Komentar/DM nyata
+yang masuk, balasan keluar, dan penyedia AI **belum terbukti pada layanan nyata**.
 Status rinci: [`docs/audit/unified-login-migration.md`](docs/audit/unified-login-migration.md).
 
 ### Gate Unified Login (pembaruan onboarding)
 
 | Lapisan | Status |
 | --- | --- |
-| Hosted Supabase 0001–0004 | Diterapkan atomik via SQL Editor; katalog/RLS/trigger/constraint dibaca ulang |
-| Hosted Vercel + Auth | Deployment Ready; profil Danu/free, login, API terautentikasi 200; chats anonim 401 |
+| Hosted Supabase 0001–0005 | Diterapkan; readback katalog 2026-11-15: kolom Unified ada, RPC hanya `service_role`, RLS aktif di 9 tabel |
+| Hosted Supabase 0006 (rate limit) | **Belum diterapkan** — readback 2026-11-15: tabel `rate_limits` dan `hit_rate_limit` tidak ada |
+| Hosted Vercel + Auth | Deployment Unified READY; login, API terautentikasi 200; chats anonim 401 |
 | Meta eksternal | App Unpublished, tester diterima, tiga izin Ready for testing, config dan redirect tersimpan |
-| Kode Unified + migrasi 0005 | Ada di working tree, belum dianggap rilis; tes/review akhir **pending** |
-| Penerapan hosted 0005 + deploy Unified | **Pending**, hanya setelah review tes hijau |
-| OAuth/subscription/webhook nyata | **Pending**; belum ada token atau akun tersambung |
+| Kode Unified + migrasi 0005 | Rilis; unit, SQL, build, e2e, integrasi lolos (lihat audit) |
+| OAuth + subscription | **Lolos** — `@danubudiarto` tersambung sebagai `unified_login`; langganan app `active: true` untuk `comments,messages` |
+| Inbound komentar/DM nyata | **Pending** — butuh komentar/DM dari akun Instagram lain |
 | Outbound/AI nyata, Live/App Review | **Tidak diizinkan dalam lingkup sekarang** |
 
 Selesai bila: regression legacy dan Unified hijau, tes migrasi/ownership disetujui,
-0005 diterapkan dan dibaca ulang, deployment baru diverifikasi; OAuth, subscription,
-inbound, dan outbound dilaporkan sebagai gate terpisah. Jangan mengklaim selesai hanya
+0005 diterapkan dan dibaca ulang, deployment baru diverifikasi (semua sudah terpenuhi); OAuth,
+subscription, inbound, dan outbound dilaporkan sebagai gate terpisah. Jangan mengklaim selesai hanya
 dari stub Graph. Outbound dan publikasi memerlukan persetujuan baru.
 
 - Repo: `dnu88/Jawabin`. Branch default sekaligus branch kerja: `claude/elegant-hamilton-vormhk`. Tidak ada `main`.
@@ -110,7 +112,7 @@ Sudah diuji (Playwright + skrip Node, dijalankan manual; **sekarang sudah ada di
 Tes otomatis di repo (sejak langkah 1 di bawah):
 
 ```
-npm test                 # Vitest unit; hasil pascamigrasi pending review
+npm test                 # Vitest unit (205 tes per 2026-11-15)
 npm run test:e2e         # Playwright demo tanpa kredensial
 npm run test:integration # Supabase lokal + stub Graph (butuh Docker/env)
 ```
@@ -146,9 +148,9 @@ penyimpanan notifikasi, atau event Log Aktivitas.
 
 Belum dijalankan atau belum dinyatakan selesai:
 
-- Migrasi hosted 0005 dan deployment perubahan Unified Login (menunggu review tes hijau).
-- OAuth Instagram, langganan webhook, balas komentar, dan pengiriman DM ke **API Meta sungguhan**
-  (butuh app Meta + akun tester). Kontraknya sudah dicocokkan dengan dokumentasi resmi; lihat risiko 4 dan 9.
+- Migrasi hosted 0006 (rate limit).
+- Komentar/DM nyata yang masuk, balas komentar, dan pengiriman DM ke **API Meta sungguhan**
+  (OAuth dan langganan webhook sudah lolos). Kontraknya sudah dicocokkan dengan dokumentasi resmi; lihat risiko 4 dan 9.
 - Panggilan ke penyedia AI.
 
 ## Risiko yang perlu dicek lebih dulu
@@ -174,10 +176,12 @@ Belum dijalankan atau belum dinyatakan selesai:
    Base URL Sumopod dan Z.ai di `server/ai.js` juga belum diverifikasi.
 7. **Hak cipta.** Tata letak dan teks antarmuka sangat dekat dengan Repliz. Sebelum rilis publik, teks di
    `src/locales/*.json` dan desainnya sebaiknya ditulis ulang.
-8. **Kegagalan simpan komentar ditelan.** Di `server/routes/webhook.js`, error selain duplikat dari
-   `insert` hanya di-`console.error` lalu webhook tetap menjawab 200 — Meta tidak akan mengirim ulang,
-   jadi komentar bisa hilang tanpa jejak. Tes `tests/unit/webhook.test.js` mengunci perilaku ini apa
-   adanya; putuskan apakah mau dibiarkan (200) atau dibuat 500 agar Meta mencoba lagi.
+8. **Kegagalan simpan webhook — diperbaiki.** Bila komentar atau DM gagal disimpan, sisa batch tetap
+   diproses lalu webhook menjawab 500 supaya Meta mengirim ulang; pengiriman ulang aman karena
+   dedupe `platform_comment_id`/`platform_message_id`. Kegagalan *setelah* tersimpan (balasan otomatis,
+   badge unread) hanya dicatat dan tetap 200, sehingga retry tidak pernah mengirim balasan kedua.
+   Kegagalan yang menetap (mis. tabel hilang) membuat Meta terus mencoba dan bisa menonaktifkan
+   langganan; pantau log Vercel `comment failed`/`message failed`.
 9. **DM — kontrak sudah diverifikasi ke dokumentasi, bukan lagi ingatan.** Dokumentasi Meta
    (Instagram Platform → Webhooks, update Sep–Okt 2026) memakai `entry[].messaging[]` untuk pesan,
    **bukan** `changes[]` bertanda `field: "messages"`. Versi pertama kode ini salah bentuk dan tidak

@@ -16,9 +16,8 @@ pada migration history; **jangan jalankan ulang hanya karena history kosong**.
 - Auth Site URL dan redirect yang tersimpan: `https://jawabin-kc75.vercel.app`.
 - Signup UI nyata membuat profil Danu dengan paket `free`; email dikonfirmasi pengguna,
   lalu login dan akses API terautentikasi berhasil.
-- Migrasi `0005_instagram_unified_login.sql` tersedia di working tree; penerapan hosted
-  **pending review tes hijau**. Terapkan hanya selisih setelah preflight katalog,
-  dalam transaksi, lalu baca ulang kolom, constraint, dan hak eksekusi RPC.
+- Migrasi `0005_instagram_unified_login.sql` **sudah diterapkan** (2026-11-15, dalam transaksi);
+  readback katalog: kolom Unified ada, RPC hanya `service_role`, RLS aktif.
 - Migrasi `0006_rate_limits.sql` **belum diterapkan di hosted**. Jalankan isinya di SQL Editor Supabase;
   sebelum itu rate limit tidak aktif (lihat bagian "Rate limit" di bawah).
 - Jangan menjalankan `supabase db reset` terhadap proyek hosted.
@@ -29,8 +28,7 @@ dan service-role key melalui dashboard tanpa menyalinnya ke chat/log/dokumen.
 ## 2. Vercel dan env
 
 Target: `dnu88s-projects/jawabin-kc75`, URL `https://jawabin-kc75.vercel.app`.
-Deployment onboarding `6A5yiGqFTH1KYDcviPGGeS8wFRBM` sudah Ready; ini **bukan** bukti
-bahwa perubahan Unified Login sudah dideploy.
+Deployment Unified `dpl_97ZN7bB64mHeSJUPGFMC7fRx5ub3` READY (lihat audit).
 
 | Env | Penggunaan |
 | --- | --- |
@@ -46,7 +44,8 @@ bahwa perubahan Unified Login sudah dideploy.
 | `META_VERIFY_TOKEN` | Rahasia untuk verifikasi callback webhook |
 
 Env Supabase publik dan dua rahasia server Supabase/enkripsi sudah dikonfigurasi pada
-onboarding. Env Meta di tabel adalah konfigurasi yang dituju, **belum dinyatakan tersimpan/deploy**.
+onboarding. `META_APP_ID`, `META_APP_SECRET`, `META_LOGIN_CONFIG_ID`, `INSTAGRAM_LOGIN_MODE=unified`
+dan `META_VERIFY_TOKEN` tersimpan di Production (lihat audit).
 Jangan mengganti `ENCRYPTION_KEY`: token dan key AI lama akan tidak terbaca.
 `INSTAGRAM_GRAPH_BASE` hanya untuk stub tes legacy; jangan isi di produksi.
 Mode global memilih OAuth baru, bukan mengubah semua akun: routing/token mengikuti
@@ -68,7 +67,8 @@ Konfigurasi eksternal sudah dibaca ulang:
 - Config `2478745309323339`; setup menunjukkan **Instagram Login Compatible Selected**.
 - Redirect tepat: `https://jawabin-kc75.vercel.app/api/instagram/callback` tersimpan.
 
-Belum ada token dihasilkan, OAuth akun tersambung, atau webhook dikonfigurasi.
+OAuth Unified `@danubudiarto` dan langganan webhook app sudah lolos (lihat audit);
+komentar/DM nyata yang masuk belum terbukti.
 Kontrak implementasi Unified: Facebook dialog OAuth (`client_id`, `config_id`,
 `redirect_uri`, `response_type=code`, state bertanda tangan), Graph Facebook v27.0,
 pertukaran `/oauth/access_token`, `/me?fields=client_business_id` (bukan ID Instagram),
