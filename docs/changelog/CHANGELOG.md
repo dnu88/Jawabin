@@ -1,5 +1,35 @@
 # Changelog
 
+## Belum dirilis — jejak delivery webhook
+
+### Perubahan kode
+
+- `server/webhooklog.js` + migrasi `0007_webhook_deliveries.sql`: setiap POST ke
+  `/api/webhook/meta` meninggalkan satu baris (hasil, status, mode tanda tangan,
+  jumlah entry, alasan per event, dan body hanya untuk delivery yang ditolak/gagal
+  disimpan). Tabel hanya untuk `service_role`, RLS tanpa policy, baris lebih tua
+  dari 14 hari dibersihkan sesekali oleh server.
+- `server/routes/webhook.js`: handler kini mengembalikan alasan singkat
+  (`stored`, `duplicate`, `unknown account`, `mode mismatch`, `own comment`,
+  `ignored`) yang ikut dicatat, sehingga "Meta tidak memanggil kami" dan
+  "Meta memanggil untuk akun yang tidak terhubung" tidak lagi terlihat sama.
+- Pencatatan bersifat best-effort: kegagalan menulis baris audit tidak mengubah
+  status yang diterima Meta.
+
+### Verifikasi
+
+- `npm test`: **210 passed** (17 file). `npx playwright test`: **32 passed**.
+  `npm run build`: sukses.
+- Migrasi 0007 diterapkan ke hosted `nfxuugjcvqxjdqvrajum` dalam satu transaksi;
+  readback katalog: tabel ada, RLS aktif, 0 policy, 12 kolom, 2 indeks.
+  Uji tulis+baca dengan `service_role` berhasil, kunci `anon` membaca `[]`
+  (RLS menahan), dan baris uji sudah dihapus.
+- Langganan app Meta dibaca ulang lewat Graph API hari ini:
+  `object=instagram`, callback `https://jawabin-kc75.vercel.app/api/webhook/meta`,
+  `active=true`, field `comments` dan `messages` versi v27.0.
+- Google Safe Browsing untuk domain ini **masih** ditandai (Transparency Report
+  `sb.ssr` status 2); jadi langkah 1 daftar "menuju live" belum selesai.
+
 ## 2026-11-16 — serah-terima
 
 - Dokumen disamakan dengan kondisi hosted: migrasi 0006 diterapkan (readback ulang), app Meta Published.

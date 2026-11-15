@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The Supabase client is faked; the signature check, the skip rules and the
 // duplicate handling in server/routes/webhook.js are the real code under test.
-const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [], chat: [], autoReplyError: null, chatError: null }))
+const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [], chat: [], autoReplyError: null, chatError: null, deliveries: [], deliveryError: null }))
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({ from: (table) => state.client.from(table), auth: { getUser: async () => ({}) } }),
@@ -38,9 +38,13 @@ function fakeClient({ account = { id: 'acc-1', user_id: 'user-1', platform: 'ins
       maybeSingle: async () => ({ data: table === 'accounts' ? account : null, error: null }),
       single: async () => ({ data: inserted, error: insertError }),
       insert: (rows) => {
-        state.inserts.push({ table, rows })
+        if (table == 'webhook_deliveries') {
+          state.deliveries.push(rows)
+          if (state.deliveryError) throw state.deliveryError
+        } else state.inserts.push({ table, rows })
         return query
       },
+      lt: () => query,
       update: () => query,
       upsert: () => query,
       delete: () => query,
@@ -79,12 +83,18 @@ function signedPost(body, { signature = true, secret = SECRET } = {}) {
   return new Request('https://jawabin.test/api/webhook/meta', { method: 'POST', headers, body: raw })
 }
 
+// The webhook also writes one audit row per delivery, so comment assertions ask
+// for comment writes specifically.
+const commentWrites = () => state.inserts.filter((call) => call.table == 'comments')
+
 beforeEach(() => {
   state.inserts = []
   state.autoReply = []
   state.chat = []
   state.autoReplyError = null
   state.chatError = null
+  state.deliveries = []
+  state.deliveryError = null
   state.client = fakeClient()
 })
 
@@ -96,24 +106,24 @@ describe('unified and legacy webhook signatures coexist', () => {
     vi.stubEnv('INSTAGRAM_LOGIN_MODE', 'instagram_login')
     state.client = fakeClient({ account: { id: 'acc-1', user_id: 'user-1', platform_user_id: '17841400000000000', auth_mode: 'unified_login' } })
     await receiveWebhook(signedPost(payload(), { secret: 'mock-meta-secret' }))
-    expect(state.inserts).toHaveLength(1)
+    expect(commentWrites()).toHaveLength(1)
   })
   it('does not let the legacy app secret authorize unified account deliveries', async () => {
     vi.stubEnv('META_APP_SECRET', 'mock-meta-secret')
     state.client = fakeClient({ account: { id: 'acc-1', user_id: 'user-1', platform_user_id: '17841400000000000', auth_mode: 'unified_login' } })
     await receiveWebhook(signedPost(payload()))
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
   it('does not let the Meta app secret authorize legacy account deliveries', async () => {
     vi.stubEnv('META_APP_SECRET', 'mock-meta-secret')
     await receiveWebhook(signedPost(payload(), { secret: 'mock-meta-secret' }))
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
   it('continues legacy signatures in unified start mode; never bypasses missing configuration', async () => {
     vi.stubEnv('INSTAGRAM_LOGIN_MODE', 'unified')
     vi.stubEnv('META_APP_SECRET', '')
     await receiveWebhook(signedPost(payload()))
-    expect(state.inserts).toHaveLength(1)
+    expect(commentWrites()).toHaveLength(1)
     vi.stubEnv('INSTAGRAM_APP_SECRET', '')
     await expect(receiveWebhook(signedPost(payload()))).rejects.toThrow(/bad signature/)
   })
@@ -123,7 +133,7 @@ describe('unified and legacy webhook signatures coexist', () => {
       const request = new Request('https://app.test/webhook', { method: 'POST', body: raw, headers: { 'x-hub-signature-256': signature } })
       await expect(receiveWebhook(request)).rejects.toThrow(/bad signature/)
     }
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
 })
 
@@ -147,7 +157,7 @@ describe('receiveWebhook (POST)', () => {
   it('rejects a missing or wrong signature', async () => {
     await expect(receiveWebhook(signedPost(payload(), { signature: false }))).rejects.toThrowError(/bad signature/)
     await expect(receiveWebhook(signedPost(payload(), { secret: 'other-secret' }))).rejects.toThrowError(/bad signature/)
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
 
   it('stores the comment and hands it to the auto reply engine', async () => {
@@ -155,8 +165,8 @@ describe('receiveWebhook (POST)', () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ok: true })
 
-    expect(state.inserts).toHaveLength(1)
-    const row = state.inserts[0].rows
+    expect(commentWrites()).toHaveLength(1)
+    const row = commentWrites()[0].rows
     expect(row).toMatchObject({
       user_id: 'user-1',
       account_id: 'acc-1',
@@ -181,14 +191,14 @@ describe('receiveWebhook (POST)', () => {
     const body = payload()
     body.entry[0].changes[0].value.from.id = '17841400000000000'
     await receiveWebhook(signedPost(body))
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
     expect(state.autoReply).toHaveLength(0)
   })
 
   it('ignores comments for accounts that are not connected', async () => {
     state.client = fakeClient({ account: null })
     await receiveWebhook(signedPost(payload()))
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
 
   it('skips changes that are not comments and values without id or text', async () => {
@@ -200,13 +210,13 @@ describe('receiveWebhook (POST)', () => {
     delete noText.entry[0].changes[0].value.text
     await receiveWebhook(signedPost(noText))
 
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
 
   it('answers 200 for a non-instagram object without touching the database', async () => {
     const response = await receiveWebhook(signedPost({ object: 'page', entry: [] }))
     expect(await response.json()).toEqual({ ok: true })
-    expect(state.inserts).toHaveLength(0)
+    expect(commentWrites()).toHaveLength(0)
   })
 
   // A comment that could not be stored must not be lost silently: the delivery
@@ -348,5 +358,56 @@ describe('entry-level comment payload', () => {
     body.entry[0].changes[0].field = 'live_comments'
     await receiveWebhook(signedPost(body))
     expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
+  })
+})
+
+describe('delivery audit', () => {
+  // Vercel keeps runtime logs for about an hour on the Hobby plan, so the only
+  // durable evidence that Meta reached us is this row.
+  it('records a handled delivery with the reason for every event', async () => {
+    await receiveWebhook(signedPost(payload()))
+    expect(state.deliveries).toHaveLength(1)
+    expect(state.deliveries[0]).toMatchObject({
+      object: 'instagram',
+      entries: 1,
+      outcome: 'handled',
+      http_status: 200,
+      signature_present: true,
+      detail: 'comment:stored',
+    })
+    // A delivery we handled is already visible in the comments table.
+    expect(state.deliveries[0].payload).toBeNull()
+  })
+
+  it('names the reason a known delivery was dropped instead of storing it', async () => {
+    state.client = fakeClient({ account: null })
+    await receiveWebhook(signedPost(payload()))
+    expect(state.deliveries[0]).toMatchObject({ outcome: 'handled', detail: 'comment:unknown account' })
+  })
+
+  it('records a refused delivery and keeps the body for diagnosis', async () => {
+    await expect(receiveWebhook(signedPost(payload(), { secret: 'other-secret' }))).rejects.toThrow(/bad signature/)
+    expect(state.deliveries).toHaveLength(1)
+    expect(state.deliveries[0]).toMatchObject({ outcome: 'rejected', http_status: 401, signature_present: true })
+    expect(state.deliveries[0].detail).toMatch(/did not match/)
+    expect(state.deliveries[0].payload).toContain('comment-abc')
+  })
+
+  it('records a delivery that could not be stored', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.client = fakeClient({ insertError: { code: '42P01', message: 'boom' } })
+    await expect(receiveWebhook(signedPost(payload()))).rejects.toMatchObject({ status: 500 })
+    expect(state.deliveries[0]).toMatchObject({ outcome: 'storage_failed', http_status: 500, detail: 'comment:failed' })
+    spy.mockRestore()
+  })
+
+  it('still answers Meta when the audit row itself cannot be written', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.deliveryError = new Error('relation "webhook_deliveries" does not exist')
+    const response = await receiveWebhook(signedPost(payload()))
+    expect(response.status).toBe(200)
+    expect(commentWrites()).toHaveLength(1)
+    expect(spy.mock.calls[0][0]).toBe('webhook delivery not recorded')
+    spy.mockRestore()
   })
 })

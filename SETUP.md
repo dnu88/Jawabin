@@ -18,6 +18,9 @@ pada migration history; **jangan jalankan ulang hanya karena history kosong**.
   lalu login dan akses API terautentikasi berhasil.
 - Migrasi `0005_instagram_unified_login.sql` **sudah diterapkan** (2026-11-15, dalam transaksi);
   readback katalog: kolom Unified ada, RPC hanya `service_role`, RLS aktif.
+- Migrasi `0007_webhook_deliveries.sql` **sudah diterapkan** (2026-11-16, satu transaksi; readback: tabel + 2 indeks,
+  RLS aktif, 0 policy, hanya `service_role` yang menulis). Tabel ini mencatat setiap POST ke `/api/webhook/meta`
+  (lihat bagian "Membaca jejak webhook"), karena log runtime Vercel hanya bertahan sekitar satu jam di plan Hobby.
 - Migrasi `0006_rate_limits.sql` **sudah diterapkan** (2026-11-15, satu transaksi + readback; dibaca ulang
   2026-11-16: tabel `rate_limits` dan fungsi `hit_rate_limit` ada). Rate limit aktif (lihat bagian "Rate limit").
 - Jangan menjalankan `supabase db reset` terhadap proyek hosted.
@@ -51,6 +54,22 @@ Jangan mengganti `ENCRYPTION_KEY`: token dan key AI lama akan tidak terbaca.
 Mode global memilih OAuth baru, bukan mengubah semua akun: routing/token mengikuti
 `accounts.auth_mode` (`instagram_login` atau `unified_login`). Tanpa mode eksplisit,
 legacy tetap menjadi default. Jangan mengganti kredensial legacy dengan kredensial Meta.
+
+## Membaca jejak webhook
+
+Setiap pengiriman Meta ke `/api/webhook/meta` meninggalkan satu baris di
+`public.webhook_deliveries` (hanya `service_role`; RLS tanpa policy menahan `anon`).
+Kolom yang dibaca pertama: `received_at`, `outcome` (`handled`, `ignored`,
+`storage_failed`, `rejected`), `http_status`, `auth_mode`, dan `detail`.
+
+- Tidak ada baris saat DM dikirim → Meta tidak mengirim; periksa setelan akun Instagram,
+  langganan per akun (`subscribed_apps`), lalu Advanced Access/App Review.
+- `detail` berisi `message:stored` → inbound jalan; lanjut uji balasan kata kunci.
+- `message:unknown account` → `entry.id` di `payload` tidak cocok dengan
+  `accounts.platform_user_id` akun yang tersambung.
+- `outcome=rejected` → `detail` menyebut secret yang tidak cocok; `payload` ikut disimpan
+  (hanya untuk delivery yang ditolak atau gagal disimpan). Baris lebih tua dari 14 hari
+  dibersihkan sesekali oleh server.
 
 ## 3. Meta: Unified Login, bukan sekadar ganti App ID
 

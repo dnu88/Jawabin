@@ -19,12 +19,12 @@ Status rinci: [`docs/audit/unified-login-migration.md`](docs/audit/unified-login
 | Lapisan | Status |
 | --- | --- |
 | Hosted Supabase 0001–0005 | Diterapkan; readback katalog 2026-11-15: kolom Unified ada, RPC hanya `service_role`, RLS aktif di 9 tabel |
-| Hosted Supabase 0006 (rate limit) | **Diterapkan** (satu transaksi + readback). Readback ulang 2026-11-16: tabel `rate_limits` dan fungsi `hit_rate_limit` ada |
+| Hosted Supabase 0006 (rate limit) + 0007 (jejak webhook) | **Diterapkan** (satu transaksi + readback). Readback ulang 2026-11-16: tabel `rate_limits`, fungsi `hit_rate_limit`, dan `webhook_deliveries` (RLS aktif, 0 policy) ada |
 | Hosted Vercel + Auth | Deployment commit `451643c` READY dan CI hijau; `/api/health` `{"ok":true}`; chats anonim 401; webhook tanpa tanda tangan 401 |
 | Meta eksternal | App **Published** (bukan Unpublished lagi); ikon, URL privasi/ketentuan/penghapusan data, dan kategori sudah diisi; `danubudiarto` dan `trasistydevi` terdaftar tester; tes webhook dari dashboard Meta masuk ke Vercel dan dijawab 200 |
 | Kode Unified + migrasi 0005 | Rilis; unit, SQL, build, e2e, integrasi lolos (lihat audit) |
 | OAuth + subscription | **Lolos** — `@danubudiarto` tersambung sebagai `unified_login`; langganan app `active: true` untuk `comments,messages` |
-| Inbound komentar/DM nyata | **Belum masuk** — komentar dan DM dari `trasistydevi` (sebelum dan sesudah publish) tidak sampai: database 0 komentar/chat/pesan dan log Vercel tidak mencatat request Meta. Lihat "Serah-terima terakhir" di bawah |
+| Inbound komentar/DM nyata | **Belum masuk** — komentar dan DM dari `trasistydevi` (sebelum dan sesudah publish) tidak sampai: database 0 komentar/chat/pesan. Sejak 0007 setiap POST Meta tercatat di `webhook_deliveries`, jadi pengiriman berikutnya bisa dibedakan: tidak ada baris = Meta tidak mengirim; ada baris = kami yang menolak. Lihat "Serah-terima terakhir" di bawah |
 | Outbound/AI nyata, Live/App Review | **Tidak diizinkan dalam lingkup sekarang** |
 
 Selesai bila: regression legacy dan Unified hijau, tes migrasi/ownership disetujui,
@@ -363,6 +363,41 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
 2. Kirim 1 DM "halo" dari `trasistydevi`, catat jamnya, lalu cek DB + log Vercel.
 3. Bila tetap kosong: baca `subscribed_apps` akun (butuh akses `ENCRYPTION_KEY` atau sambungkan ulang akun dari UI), lalu telusuri syarat Advanced Access / App Review (`docs/meta-app-review.md`).
 4. Setelah inbound terbukti: uji balasan kata kunci ke akun uji; AI nyata dan Live penuh tetap perlu izin pemilik.
+
+### Lanjutan 2026-11-16 (sesi Forge) — bukti inbound bisa dibaca
+
+**Yang ditambahkan**
+- Migrasi `0007_webhook_deliveries.sql` (diterapkan hosted, readback: RLS aktif, 0 policy)
+  dan `server/webhooklog.js`: satu baris per POST ke `/api/webhook/meta`.
+- Handler webhook mengembalikan alasan per event (`stored`, `duplicate`, `unknown account`,
+  `mode mismatch`, `own comment`, `ignored`) dan alasan itu disimpan. Body hanya disimpan
+  untuk delivery yang ditolak atau gagal disimpan.
+- Alasan: log runtime Vercel hanya bertahan sekitar satu jam di plan Hobby, dan log request
+  CDN butuh Observability Plus. Tanpa tabel ini, "Meta tidak pernah menelepon" dan
+  "Meta menelepon lalu kami tolak" sama-sama tidak terlihat.
+
+**Yang dibaca ulang dan terbukti**
+- Langganan app Meta (Graph API, app access token): `object=instagram`, callback
+  `https://jawabin-kc75.vercel.app/api/webhook/meta`, `active=true`, field `comments` dan
+  `messages` v27.0. Jadi langganan tingkat app bukan penyebabnya.
+- Database: `comments`, `chats`, `messages`, `activities` masih 0 baris; satu akun
+  `danubudiarto` (`unified_login`, `platform_user_id` 17841401873824846) dan satu aturan
+  kata kunci aktif.
+- Google Safe Browsing: domain masih ditandai (`sb.ssr` status 2). Langkah 1 tetap belum selesai.
+- CI hijau dan 210 unit + 32 e2e lolos di mesin ini sebelum push.
+
+**Langkah berikutnya (urut)**
+1. Pemilik: kirim satu DM berisi kata `halo` dari `trasistydevi` ke `@danubudiarto`, catat jamnya.
+2. Baca `select received_at, outcome, http_status, auth_mode, detail from public.webhook_deliveries
+   order by received_at desc limit 10;` dengan service role. Halaman Settings → Webhook di aplikasi
+   belum tersambung ke tabel ini, jadi belum bisa dipakai sebagai bukti.
+   - **0 baris**: Meta tidak mengirim → setelan "Izinkan akses ke pesan" di akun Instagram,
+     langganan per akun (`subscribed_apps`), atau Advanced Access/App Review.
+   - **`detail` berisi `message:stored`**: inbound sudah jalan; lanjut uji balasan kata kunci.
+   - **`message:unknown account`**: `platform_user_id` tidak cocok — cek `entry.id` di `payload`.
+   - **`outcome=rejected`**: `detail` + `payload` menunjukkan secret yang tidak cocok.
+3. Untuk membaca `subscribed_apps` per akun tetap perlu `ENCRYPTION_KEY` (tidak bisa diambil
+   dari CLI karena ditandai Sensitive di Vercel); sambungkan ulang akun dari UI bila perlu.
 
 ## Menuju live — daftar periksa
 

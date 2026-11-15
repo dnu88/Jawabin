@@ -118,3 +118,22 @@ Unified; rollback kode lama memerlukan evaluasi khusus, bukan sekadar toggle env
 Smoke non-mutasi hosted: lihat command `curl` di SETUP dan ulang login UI/Network.
 Jangan replay webhook nyata/aktifkan aturan: handler dapat mengirim balasan otomatis.
 Persetujuan target akun/post dan konten outbound harus diperoleh terpisah.
+
+## Bukti tambahan 2026-11-16 (sesi Forge)
+
+Dibaca ulang tanpa mengubah kode aplikasi atau setelan Meta:
+
+| Sumber | Hasil |
+| --- | --- |
+| `GET /v27.0/1128649916573434/subscriptions` (app access token) | `object=instagram`, `callback_url=https://jawabin-kc75.vercel.app/api/webhook/meta`, `active=true`, field `comments` dan `messages` v27.0 |
+| `public.accounts` (service role) | satu baris: `danubudiarto`, `auth_mode=unified_login`, `platform_user_id=17841401873824846`, `client_business_id=247027059222350`, token berlaku sampai 2027-01-14 |
+| `public.comments`, `public.chats`, `public.messages`, `public.activities` | 0 baris — inbound nyata masih belum ada |
+| Google Transparency Report (`/safebrowsing/status`) | `sb.ssr` status **2** untuk domain ini; `example.com` status 1 sebagai pembanding |
+| Vercel CLI `logs` | log runtime hanya tersedia untuk jendela sekitar satu jam di plan Hobby; log request CDN menolak (`plan_upgrade_required`) |
+
+Konsekuensi: penyebab yang bisa dibuktikan dari luar hanyalah langganan tingkat app
+(bukan penyebab). Untuk memisahkan "Meta tidak mengirim" dari "kami menolak", migrasi
+`0007_webhook_deliveries.sql` menambahkan jejak per delivery. Migrasi diterapkan hosted
+dalam satu transaksi; readback: tabel ada, RLS aktif, 0 policy, 12 kolom, 2 indeks.
+Uji tulis+baca dengan `service_role` berhasil, `anon` membaca `[]`, dan baris uji dihapus.
+
