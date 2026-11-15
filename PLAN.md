@@ -56,7 +56,7 @@ server/
   autoreply.js            matchRule() dan autoReply()
   chat.js                 Terima DM, jendela 24 jam, balasan otomatis untuk DM
   routes/                 ai, accounts, chats, comments, dashboard, rules, webhook
-supabase/migrations/      0001_profiles.sql, 0002_core.sql, 0003_chats.sql, 0004_notification_activity.sql
+supabase/migrations/      0001_profiles.sql … 0005_instagram_unified_login.sql, 0006_rate_limits.sql
 src/
   api.js                  SATU pintu data untuk tampilan. Lihat "Konvensi".
   server.js               request(method, path, body) ke /api dengan token sesi
@@ -372,13 +372,17 @@ Tanpa ini hanya akun tester yang bisa terhubung. Yang diminta Meta dan statusnya
 | Hapus data mandiri | Ada di kode: Pengaturan → Profil → Hapus akun |
 | Ikon aplikasi 1024×1024, kategori, email kontak | Pemilik |
 | Verifikasi bisnis | Pemilik |
+| Deskripsi pemakaian tiap izin | Draf: `docs/meta-app-review.md` |
 | Rekaman layar tiap izin (`instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages`) | Pemilik, setelah langkah 2 berhasil |
 | Domain bersih dari peringatan browser | Lihat langkah 1; peninjau Meta tidak akan melewati interstitial |
 
 ### 4. Sebelum membuka pendaftaran ke umum
 
-- **Rate limit**: belum ada di kode. Cara tercepat: aturan rate limit di Vercel Firewall untuk `/api/*`.
-- **Tulis ulang teks dan desain** yang berasal dari Repliz (risiko 7).
+- **Rate limit**: ada di kode (`server/ratelimit.js`, migrasi 0006, teruji di PostgreSQL lokal termasuk request
+  serentak). **Belum aktif di hosted sampai migrasi 0006 dijalankan**; sebelum itu limiter sengaja meloloskan request.
+- **Tulis ulang teks dan desain** yang berasal dari Repliz (risiko 7). Halaman login sudah ditulis dan ditata
+  ulang, dan halaman publik memang buatan sendiri. Yang masih berasal dari Repliz: isi `src/locales/*.json`
+  (teks halaman pengaturan) dan tata letak shell aplikasi di balik login.
 - **`helpLinks`** di `src/menu.js` masih placeholder `#...`; saat ini hanya terlihat di mode demo.
 - **Paket dan pembayaran** (rencana langkah 5) kalau layanan ini berbayar; tanpa itu semua pengguna gratis
   dan tanpa batas.

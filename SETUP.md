@@ -19,6 +19,8 @@ pada migration history; **jangan jalankan ulang hanya karena history kosong**.
 - Migrasi `0005_instagram_unified_login.sql` tersedia di working tree; penerapan hosted
   **pending review tes hijau**. Terapkan hanya selisih setelah preflight katalog,
   dalam transaksi, lalu baca ulang kolom, constraint, dan hak eksekusi RPC.
+- Migrasi `0006_rate_limits.sql` **belum diterapkan di hosted**. Jalankan isinya di SQL Editor Supabase;
+  sebelum itu rate limit tidak aktif (lihat bagian "Rate limit" di bawah).
 - Jangan menjalankan `supabase db reset` terhadap proyek hosted.
 
 Untuk proyek baru, jalankan migrasi yang sudah direview berurutan; ambil URL, anon key,
@@ -128,3 +130,26 @@ Fitur mock dan rencana lanjutan tetap tercatat di [`PLAN.md`](PLAN.md).
   **App settings → Basic → Data deletion instructions URL**.
 - Pengguna menghapus akunnya sendiri dari **Pengaturan → Profil → Hapus akun**. Server memanggil
   `auth.admin.deleteUser`, dan semua tabel ikut terhapus lewat `ON DELETE CASCADE`.
+
+## Rate limit
+
+`supabase/migrations/0006_rate_limits.sql` membuat penghitung request. Setelah dijalankan, server membatasi
+tiap pengguna: 120 request per menit secara umum, 10 per menit untuk simpan pengaturan AI, 30 per menit untuk
+kirim balasan dan DM, 5 per jam untuk hapus akun; callback OAuth dibatasi 30 per menit per alamat IP.
+Webhook Meta dan `/api/health` tidak dibatasi. **Selama migrasi ini belum dijalankan, pembatasan tidak aktif**
+(request tetap dilayani dan log Vercel mencatat peringatan). Angkanya ada di `server/ratelimit.js`.
+
+## Email pendaftaran (SMTP)
+
+SMTP bawaan Supabase hanya mengirim beberapa email per jam dan tidak untuk produksi. Sebelum membuka pendaftaran:
+Supabase → **Authentication → Emails → SMTP Settings**, isi kredensial penyedia email (mis. Resend, Brevo, atau
+Amazon SES) dengan alamat pengirim dari domain sendiri, lalu naikkan batas di **Authentication → Rate Limits**.
+
+## Tombol login Google
+
+Tombol "Lanjutkan dengan Google" hanya tampil kalau `VITE_GOOGLE_LOGIN=1` di Vercel. Isi variabel itu setelah
+penyedia Google aktif di Supabase (**Authentication → Providers → Google**); tanpa itu tombolnya gagal.
+
+## App Review Meta
+
+Draf deskripsi izin dan urutan rekaman layar: [`docs/meta-app-review.md`](docs/meta-app-review.md).
