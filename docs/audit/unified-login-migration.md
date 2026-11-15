@@ -130,6 +130,7 @@ Dibaca ulang tanpa mengubah kode aplikasi atau setelan Meta:
 | `public.comments`, `public.chats`, `public.messages`, `public.activities` | 0 baris — inbound nyata masih belum ada |
 | Google Transparency Report (`/safebrowsing/status`) | `sb.ssr` status **2** untuk domain ini; `example.com` status 1 sebagai pembanding |
 | Vercel CLI `logs` | log runtime hanya tersedia untuk jendela sekitar satu jam di plan Hobby; log request CDN menolak (`plan_upgrade_required`) |
+| Deployment `0b8b2fd` (produksi) | READY; tiga probe webhook setelah deploy: tanda tangan salah → 401 + baris `rejected`, field tak ditangani → baris `ignored`, `entry.id` tak dikenal → baris `handled` dengan `detail=comment:unknown account`. Baris probe sudah dihapus |
 
 Konsekuensi: penyebab yang bisa dibuktikan dari luar hanyalah langganan tingkat app
 (bukan penyebab). Untuk memisahkan "Meta tidak mengirim" dari "kami menolak", migrasi

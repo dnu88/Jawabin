@@ -385,6 +385,10 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   kata kunci aktif.
 - Google Safe Browsing: domain masih ditandai (`sb.ssr` status 2). Langkah 1 tetap belum selesai.
 - CI hijau dan 210 unit + 32 e2e lolos di mesin ini sebelum push.
+- Deploy `0b8b2fd` READY. Tiga probe ke produksi membuktikan jejak bekerja: tanda tangan salah →
+  baris `rejected` (401) dengan `payload`, field tak ditangani → `ignored`, `entry.id` tak dikenal →
+  `handled` dengan `detail=comment:unknown account`. Baris probe sudah dihapus, jadi tabel kosong
+  sampai delivery Meta yang sebenarnya datang.
 
 **Langkah berikutnya (urut)**
 1. Pemilik: kirim satu DM berisi kata `halo` dari `trasistydevi` ke `@danubudiarto`, catat jamnya.
