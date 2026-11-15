@@ -5,7 +5,9 @@ import Page from '../../components/Page.vue'
 import Section from '../../components/Section.vue'
 import UiModal from '../../components/UiModal.vue'
 import { t, formatDay, formatNumber } from '../../i18n'
-import { user, sendPhoneCode, verifyPhoneCode, changePassword } from '../../api'
+import { useRouter } from 'vue-router'
+import { user, sendPhoneCode, verifyPhoneCode, changePassword, deleteAccountData } from '../../api'
+import { authEnabled, forgetSession } from '../../auth'
 import { showToast } from '../../toast'
 
 // A short list; extend with every country code when wiring the real backend.
@@ -65,6 +67,30 @@ async function submitPassword() {
     showToast(error.message, 'error')
   }
   password.loading = false
+}
+
+const router = useRouter()
+const showDelete = ref(false)
+const removal = reactive({ loading: false, value: '', error: '' })
+
+function openDelete() {
+  Object.assign(removal, { loading: false, value: '', error: '' })
+  showDelete.value = true
+}
+async function submitDelete() {
+  if (removal.loading) return
+  removal.error = removal.value.trim().toLowerCase() == String(user.email).toLowerCase() ? '' : t('danger.mismatch')
+  if (removal.error) return
+  removal.loading = true
+  try {
+    await deleteAccountData(removal.value.trim())
+    await forgetSession()
+    showToast(t('danger.toast'), 'success')
+    router.replace('/')
+  } catch (error) {
+    removal.error = error.message
+    removal.loading = false
+  }
 }
 
 const hasPlan = computed(() => user.plan && user.plan != 'free' && user.expiredAt)
@@ -144,7 +170,30 @@ const addonRows = computed(() => [
         </li>
       </ul>
     </Section>
+    <Section v-if="authEnabled" icon="mingcute:delete-2-line" :title="t('danger.title')" :description="t('danger.hint')">
+      <div class="w-full flex justify-end border-t border-base-200 pt-4">
+        <button class="btn btn-sm text-error" @click="openDelete">{{ t('danger.button') }}</button>
+      </div>
+    </Section>
   </Page>
+
+  <UiModal v-model="showDelete" :title="t('danger.modal')">
+    <form class="w-full flex flex-col gap-5" @submit.prevent="submitDelete">
+      <p class="text-sm text-base-content/70">{{ t('danger.hint') }}</p>
+      <div class="flex flex-col gap-1">
+        <label for="delete-confirm" class="text-xs text-base-content/70">{{ t('danger.label', { email: user.email }) }}</label>
+        <input id="delete-confirm" v-model="removal.value" type="email" class="w-full input" :class="{ 'input-error': removal.error }" autocomplete="off" />
+        <span v-if="removal.error" class="text-xs text-error" role="alert">{{ removal.error }}</span>
+      </div>
+      <div class="w-full flex items-center gap-3">
+        <button type="button" class="btn flex-1" :disabled="removal.loading" @click="showDelete = false">{{ t('danger.cancel') }}</button>
+        <button type="submit" class="btn btn-error flex-1" :disabled="removal.loading">
+          <span v-if="removal.loading" class="loading loading-xs" />
+          {{ t('danger.confirm') }}
+        </button>
+      </div>
+    </form>
+  </UiModal>
 
   <UiModal v-model="showVerify" :title="t('profile.verify.title')">
     <form class="w-full flex flex-col gap-5" @submit.prevent="submitVerify">

@@ -66,8 +66,8 @@ test.describe('demo mode', () => {
     await expect(page.getByRole('link', { name: /ketentuan|terms/i })).toBeVisible()
   })
 
-  test('privacy and terms pages are public and readable', async ({ page }) => {
-    for (const path of ['/privacy', '/terms']) {
+  test('privacy, terms and data deletion pages are public and readable', async ({ page }) => {
+    for (const path of ['/privacy', '/terms', '/data-deletion']) {
       await page.goto(path)
       await expect(page.locator('h1')).toBeVisible()
       await expect(page.getByText(/danubudiarto88@gmail\.com/).first()).toBeVisible()

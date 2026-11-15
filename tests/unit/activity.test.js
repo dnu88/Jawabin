@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The activity log and notification preferences, with a fake Supabase.
-const state = vi.hoisted(() => ({ calls: [], rows: [], count: 0, failInsert: false }))
+const state = vi.hoisted(() => ({ calls: [], rows: [], count: 0, failInsert: false, deleted: [], deleteError: null }))
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
+    auth: { admin: { deleteUser: async (id) => (state.deleted.push(id), { error: state.deleteError }) } },
     from: (table) => {
       const query = {
         select: () => query,
@@ -27,14 +28,14 @@ vi.mock('@supabase/supabase-js', () => ({
 }))
 
 const { logActivity, listActivities } = await import('../../server/activity.js')
-const { putNotification } = await import('../../server/routes/profile.js')
+const { putNotification, deleteProfile } = await import('../../server/routes/profile.js')
 
 const user = { id: 'user-1', email: 'a@b.c', user_metadata: { name: 'Ana' } }
 const request = new Request('https://app.example.com/api/rules', {
   headers: { 'user-agent': 'Vitest', 'x-forwarded-for': '203.0.113.9, 10.0.0.1' },
 })
 
-beforeEach(() => Object.assign(state, { calls: [], rows: [], count: 0, failInsert: false }))
+beforeEach(() => Object.assign(state, { calls: [], rows: [], count: 0, failInsert: false, deleted: [], deleteError: null }))
 
 describe('logActivity', () => {
   it('stores who did what, with the first forwarded IP', async () => {
@@ -71,5 +72,25 @@ describe('putNotification', () => {
     const body = await (await putNotification(user, { expired: 1, account: 0, admin: true })).json()
     expect(body.notification).toEqual({ affiliate: false, expired: true, transaction: false, account: false })
     expect(state.calls.find((call) => call.op == 'update').row).toEqual({ notification: body.notification })
+  })
+})
+
+describe('deleteProfile', () => {
+  it('refuses without the account email, and deletes nothing', async () => {
+    for (const confirm of [undefined, '', 'someone@else.com', 'yes']) {
+      await expect(deleteProfile(user, { confirm })).rejects.toMatchObject({ status: 400 })
+    }
+    expect(state.deleted).toEqual([])
+  })
+
+  it('deletes only the signed-in user once the email matches, ignoring case and spaces', async () => {
+    const body = await (await deleteProfile(user, { confirm: '  A@B.C ' })).json()
+    expect(body).toEqual({ ok: true })
+    expect(state.deleted).toEqual(['user-1'])
+  })
+
+  it('reports a failed deletion instead of claiming success', async () => {
+    state.deleteError = { message: 'user not found' }
+    await expect(deleteProfile(user, { confirm: 'a@b.c' })).rejects.toMatchObject({ status: 500, message: 'user not found' })
   })
 })

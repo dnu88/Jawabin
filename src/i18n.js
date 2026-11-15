@@ -18,6 +18,11 @@ const messages = {
       soon: 'This page is not built yet.',
     },
     common: { cancel: 'Cancel', confirm: 'Confirm', close: 'Close' },
+    danger: {
+      title: 'Delete account', hint: 'Removes your Jawabin account and everything stored for it: connected Instagram accounts and their access tokens, comments, messages, rules, AI settings and history. This cannot be undone.',
+      button: 'Delete account', modal: 'Delete your account?', label: 'Type {email} to confirm', mismatch: 'That does not match your account email',
+      confirm: 'Delete permanently', cancel: 'Cancel', toast: 'Your account and data were deleted',
+    },
     account: {
       title: 'Account Integration', hint: 'The social accounts Jawabin reads comments from', connect: 'Connect Instagram',
       note: 'Only Instagram professional accounts (Business or Creator) can be connected.',
@@ -98,6 +103,11 @@ const messages = {
       soon: 'Halaman ini belum dibuat.',
     },
     common: { cancel: 'Batal', confirm: 'Ya, lanjutkan', close: 'Tutup' },
+    danger: {
+      title: 'Hapus akun', hint: 'Menghapus akun Jawabin kamu beserta semua yang tersimpan: akun Instagram yang terhubung dan token aksesnya, komentar, pesan, aturan, pengaturan AI, dan riwayat. Tidak bisa dibatalkan.',
+      button: 'Hapus akun', modal: 'Hapus akunmu?', label: 'Ketik {email} untuk konfirmasi', mismatch: 'Tidak cocok dengan email akunmu',
+      confirm: 'Hapus permanen', cancel: 'Batal', toast: 'Akun dan datamu sudah dihapus',
+    },
     account: {
       title: 'Integrasi Akun', hint: 'Akun media sosial yang komentarnya dibaca Jawabin', connect: 'Hubungkan Instagram',
       note: 'Hanya akun Instagram profesional (Bisnis atau Kreator) yang bisa dihubungkan.',

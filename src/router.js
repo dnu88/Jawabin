@@ -34,6 +34,7 @@ const router = createRouter({
     { path: '/login', name: 'login', component: () => import('./pages/Login.vue') },
     { path: '/privacy', name: 'privacy', component: () => import('./pages/Legal.vue') },
     { path: '/terms', name: 'terms', component: () => import('./pages/Legal.vue') },
+    { path: '/data-deletion', name: 'data-deletion', component: () => import('./pages/Legal.vue') },
     {
       path: '/user',
       name: 'user',
@@ -61,7 +62,7 @@ const router = createRouter({
 // With Supabase configured, everything except the public pages needs a session.
 // The public pages exist so a visitor can read who runs the service and what it
 // does before being asked for credentials.
-const PUBLIC = new Set(['home', 'login', 'privacy', 'terms'])
+const PUBLIC = new Set(['home', 'login', 'privacy', 'terms', 'data-deletion'])
 router.beforeEach(async (to) => {
   if (!authEnabled) return to.name == 'login' ? '/' : true
   await authReady

@@ -19,6 +19,7 @@ const spies = vi.hoisted(() => {
     profile: {
       getProfile: vi.fn(async () => new Response('{"hit":"getProfile"}')),
       putNotification: vi.fn(async () => new Response('{"hit":"putNotification"}')),
+      deleteProfile: vi.fn(async () => new Response('{"hit":"deleteProfile"}')),
     },
     accounts: {
       listAccounts: vi.fn(async () => new Response('{"hit":"listAccounts"}')),
@@ -225,5 +226,20 @@ describe('activity log', () => {
     await call('GET', '/api/rules')
     await call('GET', '/api/activities')
     expect(spies.activity.logActivity).not.toHaveBeenCalled()
+  })
+})
+
+describe('account deletion', () => {
+  it('needs a session', async () => {
+    const response = await call('POST', '/api/profile/delete', { token: null, body: { confirm: 'a@b.c' } })
+    expect(response.status).toBe(401)
+    expect(spies.profile.deleteProfile).not.toHaveBeenCalled()
+  })
+
+  it('passes the signed-in user and the typed confirmation to the handler', async () => {
+    await call('POST', '/api/profile/delete', { body: { confirm: 'a@b.c' } })
+    const [user, body] = spies.profile.deleteProfile.mock.calls[0]
+    expect(user.id).toBe('user-1')
+    expect(body).toEqual({ confirm: 'a@b.c' })
   })
 })

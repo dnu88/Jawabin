@@ -60,3 +60,9 @@ export async function signOut() {
 export async function updatePassword(password) {
   unwrap(await supabase.auth.updateUser({ password }))
 }
+
+// After the server deleted the account: drop the local session without calling Supabase again.
+export async function forgetSession() {
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+  session.value = null
+}

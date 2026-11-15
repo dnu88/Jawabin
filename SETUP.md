@@ -121,3 +121,10 @@ isi balasan, dan dampak eksternal. OAuth sukses bukan bukti inbound/outbound end
 Struktur: `src/` UI, `api/index.js` router, `server/` backend,
 `supabase/migrations/` skema. `npm run dev` untuk demo; `npx vercel dev` untuk API lokal.
 Fitur mock dan rencana lanjutan tetap tercatat di [`PLAN.md`](PLAN.md).
+
+## Penghapusan data (diminta Meta)
+
+- Halaman publik instruksi: `https://ALAMAT-KAMU/data-deletion`. Isi alamat ini di Meta →
+  **App settings → Basic → Data deletion instructions URL**.
+- Pengguna menghapus akunnya sendiri dari **Pengaturan → Profil → Hapus akun**. Server memanggil
+  `auth.admin.deleteUser`, dan semua tabel ikut terhapus lewat `ON DELETE CASCADE`.

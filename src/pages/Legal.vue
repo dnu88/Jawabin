@@ -4,9 +4,34 @@ import { useRoute, RouterLink } from 'vue-router'
 
 const route = useRoute()
 const isPrivacy = computed(() => route.name === 'privacy')
+const isDeletion = computed(() => route.name === 'data-deletion')
+const heading = computed(() => (isDeletion.value ? 'Penghapusan Data' : isPrivacy.value ? 'Kebijakan Privasi' : 'Ketentuan Layanan'))
+
+// Meta asks every app for a public page that says how a person gets their data deleted.
+const deletionSections = [
+  {
+    title: 'Hapus sendiri dari dalam aplikasi',
+    body: 'Masuk ke Jawabin, buka Pengaturan → Profil, lalu pilih Hapus akun dan ketik email akun Anda untuk konfirmasi. Akun langsung dihapus bersama semua data yang tersimpan: akun Instagram yang terhubung beserta token aksesnya, komentar, pesan, aturan balasan, pengaturan dan kunci AI, riwayat pemakaian, dan log aktivitas. Penghapusan ini permanen.',
+  },
+  {
+    title: 'Hanya memutuskan akun Instagram',
+    body: 'Kalau Anda hanya ingin Jawabin berhenti mengakses satu akun Instagram, buka Integrasi Akun lalu pilih Putuskan. Token akses dan komentar serta pesan dari akun itu dihapus, sedangkan akun Jawabin Anda tetap ada. Anda juga bisa mencabut akses Jawabin dari pengaturan akun Meta/Instagram Anda.',
+  },
+  {
+    title: 'Minta lewat email',
+    body: 'Kalau Anda tidak bisa masuk, kirim permintaan dari alamat email yang terdaftar ke danubudiarto88@gmail.com dengan subjek “Hapus data Jawabin”. Kami menghapus akun dan datanya paling lambat 30 hari setelah permintaan diverifikasi, lalu mengirim konfirmasi.',
+  },
+  {
+    title: 'Yang tidak bisa kami hapus',
+    body: 'Komentar, pesan, dan balasan yang sudah tampil di Instagram berada di sistem Meta dan tetap ada di sana; hapus langsung dari Instagram. Cadangan basis data pada penyedia infrastruktur kami terhapus mengikuti jadwal retensi penyedia tersebut.',
+  },
+]
+
 
 const sections = computed(() =>
-  isPrivacy.value
+  isDeletion.value
+    ? deletionSections
+    : isPrivacy.value
     ? [
         {
           title: 'Data yang kami kumpulkan',
@@ -26,7 +51,7 @@ const sections = computed(() =>
         },
         {
           title: 'Masa penyimpanan dan penghapusan',
-          body: 'Anda dapat memutuskan akun Instagram kapan saja dari halaman Integrasi Akun, dan menghapus akun Jawabin dengan menghubungi kami. Setelah pemutusan, token akses dihapus sehingga Jawabin tidak bisa lagi membaca komentar atau pesan baru.',
+          body: 'Anda dapat memutuskan akun Instagram kapan saja dari halaman Integrasi Akun, dan menghapus akun Jawabin beserta seluruh datanya dari Pengaturan → Profil → Hapus akun, atau dengan menghubungi kami (lihat halaman Penghapusan Data). Setelah pemutusan, token akses dihapus sehingga Jawabin tidak bisa lagi membaca komentar atau pesan baru.',
         },
         {
           title: 'Kontak',
@@ -72,7 +97,7 @@ const sections = computed(() =>
       <RouterLink class="link text-sm" to="/">Kembali</RouterLink>
     </div>
 
-    <h1 class="mt-8 text-2xl font-semibold">{{ isPrivacy ? 'Kebijakan Privasi' : 'Ketentuan Layanan' }}</h1>
+    <h1 class="mt-8 text-2xl font-semibold">{{ heading }}</h1>
     <p class="mt-2 text-sm text-neutral-500">Diperbarui 15 November 2026 · Berlaku untuk jawabin-kc75.vercel.app</p>
 
     <div class="mt-6 space-y-5">

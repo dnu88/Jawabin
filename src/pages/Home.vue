@@ -33,6 +33,7 @@ const copy = {
     register: 'Buat akun',
     privacy: 'Kebijakan Privasi',
     terms: 'Ketentuan Layanan',
+    deletion: 'Penghapusan Data',
     demo: 'Coba mode demo tanpa akun',
   },
   en: {
@@ -59,6 +60,7 @@ const copy = {
     register: 'Create account',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
+    deletion: 'Data Deletion',
     demo: 'Try demo mode without an account',
   },
 }
@@ -112,6 +114,7 @@ const text = () => copy[lang.value]
       <footer class="flex flex-wrap gap-3 border-t border-neutral-200 pt-4 text-sm">
         <RouterLink class="link" to="/privacy">{{ text().privacy }}</RouterLink>
         <RouterLink class="link" to="/terms">{{ text().terms }}</RouterLink>
+        <RouterLink class="link" to="/data-deletion">{{ text().deletion }}</RouterLink>
         <a class="link" href="mailto:danubudiarto88@gmail.com">danubudiarto88@gmail.com</a>
       </footer>
     </main>

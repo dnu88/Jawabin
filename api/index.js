@@ -7,7 +7,7 @@ import { getChat, listChats, sendChatMessage } from '../server/routes/chats.js'
 import { listComments, replyComment, updateComment } from '../server/routes/comments.js'
 import { createRule, deleteRule, listRules, updateRule } from '../server/routes/rules.js'
 import { receiveWebhook, verifyWebhook } from '../server/routes/webhook.js'
-import { getProfile, putNotification } from '../server/routes/profile.js'
+import { deleteProfile, getProfile, putNotification } from '../server/routes/profile.js'
 import { listActivities, logActivity } from '../server/activity.js'
 
 // Routes that need a signed-in user: handler(user, body, url, id).
@@ -16,6 +16,7 @@ const routes = [
   ['GET', 'dashboard', getDashboard],
   ['GET', 'profile', getProfile],
   ['PUT', 'profile/notification', putNotification, ['setting', 'update_notification']],
+  ['POST', 'profile/delete', deleteProfile],
   ['GET', 'activities', listActivities],
   ['GET', 'ai', getAi],
   ['PUT', 'ai', putAi, ['setting', 'update_ai']],

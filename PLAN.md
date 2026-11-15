@@ -84,6 +84,7 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 | Percakapan (DM) | `pages/Conversation.vue` | `GET /chats`, `GET /chats/:id`, `POST /chats/:id/messages` |
 | Automasi (aturan balasan) | `pages/Automation.vue` | `GET/POST /rules`, `PUT/DELETE /rules/:id` |
 | Notifikasi | `pages/setting/Notification.vue` | `GET /profile`, `PUT /profile/notification` |
+| Hapus akun | `pages/setting/Profile.vue` | `POST /profile/delete` (wajib mengetik email akun) |
 | Log Aktivitas | `pages/setting/Activity.vue` | `GET /activities`; ditulis otomatis oleh `api/index.js` |
 | Webhook Meta | — | `GET/POST /webhook/meta` |
 
@@ -332,6 +333,57 @@ langsung, jadi saat menyambungkan satu halaman, pindahkan key-nya keluar dari `m
 
 Platform lain (Facebook Page paling dekat karena sama-sama Meta, lalu TikTok), Konten Terjadwal + Storage,
 Kontak, Akun Operator, Laporan, Template Automasi, Asisten AI, Riset, Affiliate.
+
+## Menuju live — daftar periksa
+
+"Live" di sini berarti orang lain bisa mendaftar, menghubungkan akun Instagram mereka sendiri, dan komentar
+serta DM mereka terbalas. Tiga hal menghalanginya; urutannya penting.
+
+### 1. Status Safe Browsing Google (pemilik) — **menghalangi semuanya**
+
+Chrome menandai `jawabin-kc75.vercel.app` sebagai situs berbahaya, sehingga login dan OAuth terblokir.
+Rincian dan langkah pemilik: [`docs/audit/safe-browsing-remediation.md`](docs/audit/safe-browsing-remediation.md).
+
+- Search Console → Security issues → **Request review** setelah deployment terbaru aktif.
+- Sangat disarankan: pindah ke **domain sendiri**. Subdomain `*.vercel.app` dengan formulir login sering
+  ditandai, dan reputasinya tidak bisa dikendalikan. Setelah pindah, perbarui Site URL dan redirect di
+  Supabase, redirect URI dan URL webhook di Meta, dan teks domain di `src/pages/Legal.vue`.
+- Hipotesis yang belum diuji: tampilan dan teks yang sangat dekat dengan Repliz bisa ikut memicu
+  klasifikasi "peniru". Menulis ulang teks dan desain (risiko 7) mengurangi kemungkinan itu.
+
+### 2. Buktikan alur nyata dengan akun tester (pemilik + persetujuan per aksi)
+
+- Inbound: komentar dan DM nyata dari akun Instagram lain masuk ke halaman Komentar dan Percakapan.
+- Outbound: satu balasan manual, satu balasan aturan kata kunci, satu balasan AI. Tiap pengiriman adalah
+  konten publik atas nama akun pemilik; minta persetujuan eksplisit sebelum mengaktifkan aturan.
+- Pengaturan AI: simpan satu key nyata dan pastikan request uji tercatat.
+- Hapus akun: coba **Pengaturan → Profil → Hapus akun** dengan akun percobaan, lalu pastikan barisnya
+  hilang dari semua tabel. Rute `POST /api/profile/delete` baru teruji dengan Supabase tiruan.
+
+### 3. App Review Meta, lalu mode Live (pemilik)
+
+Tanpa ini hanya akun tester yang bisa terhubung. Yang diminta Meta dan statusnya:
+
+| Syarat | Status |
+| --- | --- |
+| URL Kebijakan Privasi | Ada: `/privacy` |
+| URL Ketentuan Layanan | Ada: `/terms` |
+| URL instruksi penghapusan data | Ada: `/data-deletion` — isi di App settings → Basic → Data deletion instructions URL |
+| Hapus data mandiri | Ada di kode: Pengaturan → Profil → Hapus akun |
+| Ikon aplikasi 1024×1024, kategori, email kontak | Pemilik |
+| Verifikasi bisnis | Pemilik |
+| Rekaman layar tiap izin (`instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages`) | Pemilik, setelah langkah 2 berhasil |
+| Domain bersih dari peringatan browser | Lihat langkah 1; peninjau Meta tidak akan melewati interstitial |
+
+### 4. Sebelum membuka pendaftaran ke umum
+
+- **Rate limit**: belum ada di kode. Cara tercepat: aturan rate limit di Vercel Firewall untuk `/api/*`.
+- **Tulis ulang teks dan desain** yang berasal dari Repliz (risiko 7).
+- **`helpLinks`** di `src/menu.js` masih placeholder `#...`; saat ini hanya terlihat di mode demo.
+- **Paket dan pembayaran** (rencana langkah 5) kalau layanan ini berbayar; tanpa itu semua pengguna gratis
+  dan tanpa batas.
+- **Email**: SMTP bawaan Supabase dibatasi beberapa email per jam; pasang SMTP sendiri sebelum banyak
+  pendaftar.
 
 ## Sebelum rilis ke publik
 

@@ -423,6 +423,12 @@ export async function changePassword(password) {
   await wait(700)
 }
 
+// Permanently deletes the signed-in account and everything stored for it.
+export async function deleteAccountData(confirm) {
+  if (!authEnabled) throw new Error('demo mode: there is no account to delete')
+  return request('POST', '/profile/delete', { confirm })
+}
+
 export async function getApps() {
   await wait()
   return { data: db.apps.map((app) => ({ ...app, redirectUris: [...app.redirectUris] })) }
