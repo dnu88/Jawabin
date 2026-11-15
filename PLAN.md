@@ -19,12 +19,12 @@ Status rinci: [`docs/audit/unified-login-migration.md`](docs/audit/unified-login
 | Lapisan | Status |
 | --- | --- |
 | Hosted Supabase 0001–0005 | Diterapkan; readback katalog 2026-11-15: kolom Unified ada, RPC hanya `service_role`, RLS aktif di 9 tabel |
-| Hosted Supabase 0006 (rate limit) | **Belum diterapkan** — readback 2026-11-15: tabel `rate_limits` dan `hit_rate_limit` tidak ada |
-| Hosted Vercel + Auth | Deployment Unified READY; login, API terautentikasi 200; chats anonim 401 |
-| Meta eksternal | App Unpublished, tester diterima, tiga izin Ready for testing, config dan redirect tersimpan |
+| Hosted Supabase 0006 (rate limit) | **Diterapkan** (satu transaksi + readback). Readback ulang 2026-11-16: tabel `rate_limits` dan fungsi `hit_rate_limit` ada |
+| Hosted Vercel + Auth | Deployment commit `451643c` READY dan CI hijau; `/api/health` `{"ok":true}`; chats anonim 401; webhook tanpa tanda tangan 401 |
+| Meta eksternal | App **Published** (bukan Unpublished lagi); ikon, URL privasi/ketentuan/penghapusan data, dan kategori sudah diisi; `danubudiarto` dan `trasistydevi` terdaftar tester; tes webhook dari dashboard Meta masuk ke Vercel dan dijawab 200 |
 | Kode Unified + migrasi 0005 | Rilis; unit, SQL, build, e2e, integrasi lolos (lihat audit) |
 | OAuth + subscription | **Lolos** — `@danubudiarto` tersambung sebagai `unified_login`; langganan app `active: true` untuk `comments,messages` |
-| Inbound komentar/DM nyata | **Pending** — butuh komentar/DM dari akun Instagram lain |
+| Inbound komentar/DM nyata | **Belum masuk** — komentar dan DM dari `trasistydevi` (sebelum dan sesudah publish) tidak sampai: database 0 komentar/chat/pesan dan log Vercel tidak mencatat request Meta. Lihat "Serah-terima terakhir" di bawah |
 | Outbound/AI nyata, Live/App Review | **Tidak diizinkan dalam lingkup sekarang** |
 
 Selesai bila: regression legacy dan Unified hijau, tes migrasi/ownership disetujui,
@@ -148,7 +148,6 @@ penyimpanan notifikasi, atau event Log Aktivitas.
 
 Belum dijalankan atau belum dinyatakan selesai:
 
-- Migrasi hosted 0006 (rate limit).
 - Komentar/DM nyata yang masuk, balas komentar, dan pengiriman DM ke **API Meta sungguhan**
   (OAuth dan langganan webhook sudah lolos). Kontraknya sudah dicocokkan dengan dokumentasi resmi; lihat risiko 4 dan 9.
 - Panggilan ke penyedia AI.
@@ -338,6 +337,33 @@ langsung, jadi saat menyambungkan satu halaman, pindahkan key-nya keluar dari `m
 Platform lain (Facebook Page paling dekat karena sama-sama Meta, lalu TikTok), Konten Terjadwal + Storage,
 Kontak, Akun Operator, Laporan, Template Automasi, Asisten AI, Riset, Affiliate.
 
+## Serah-terima terakhir (2026-11-16)
+
+Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulang pekerjaan.
+
+**Selesai dan terbukti**
+- Kode dan dokumen di branch `claude/elegant-hamilton-vormhk` (commit `451643c` + commit serah-terima ini), Vercel READY, CI hijau.
+- Hosted Supabase 0001–0006 terpasang (0006 dibaca ulang 2026-11-16).
+- App Meta "Jawabin Testing" (`1128649916573434`) sudah **Published**; ikon, URL privasi/ketentuan/penghapusan data, kategori terisi.
+- Tes webhook dari dashboard Meta masuk ke Vercel dan dijawab 200. Langganan app `instagram` → `comments,messages` aktif; langganan akun On.
+- Izin tetap dari pemilik: push+deploy ke branch kerja setelah tes lokal lolos, ubah setting Meta app, migrasi Supabase dalam transaksi + readback. Balasan nyata hanya aturan kata kunci ke akun uji milik pemilik; AI nyata belum diizinkan; hapus data dan App Review/Live perlu izin baru.
+
+**Belum selesai: inbound nyata tidak masuk**
+- DM dan komentar dari `trasistydevi` ke `@danubudiarto` tidak tercatat (DB 0 komentar/chat/pesan; tidak ada request Meta di log Vercel). Aturan "DM uji halo" masih aktif — kirim DM dengan kata "halo" dari akun uji untuk menguji balasan kata kunci.
+- Dugaan penyebab (belum terbukti, urut dari murah): (1) setelan Instagram `danubudiarto` "Izinkan akses ke pesan" (Pengaturan → Pesan dan balasan story → Alat yang terhubung) belum aktif — hanya pemilik yang bisa cek di HP; (2) komentar butuh Advanced Access (App Review) untuk webhook; DM dari tester mungkin cukup Standard; (3) langganan per akun (`GET /{ig-user-id}/subscribed_apps`) belum dibaca ulang karena kunci enkripsi token (`ENCRYPTION_KEY`) tidak bisa diambil dari Vercel lewat CLI; (4) akun `trasistydevi` mungkin belum menerima peran tester (cek status "Pending" di App roles).
+- Cara membaca hasil: query hanya-baca ke `comments`, `chats`, `messages`; log Vercel `/api/webhook/meta`.
+
+**Kendala akses**
+- Browser server: GitHub sudah login; Facebook dan Instagram **tidak** (diblokir/CAPTCHA dari alamat data center; kode cadangan 2FA Instagram tidak bisa dimasukkan lewat kartu aman, dan Instagram mulai membalas 429). Jangan mengulang login Instagram dari server.
+- Token GitHub "openbot" (fine-grained, repo Jawabin) tidak berkedaluwarsa; ganti dengan yang berkedaluwarsa.
+- Jangan tekan Reset pada App secret Meta.
+
+**Langkah berikutnya**
+1. Pemilik: pastikan "Izinkan akses ke pesan" aktif di `danubudiarto`, dan peran tester `trasistydevi` sudah diterima.
+2. Kirim 1 DM "halo" dari `trasistydevi`, catat jamnya, lalu cek DB + log Vercel.
+3. Bila tetap kosong: baca `subscribed_apps` akun (butuh akses `ENCRYPTION_KEY` atau sambungkan ulang akun dari UI), lalu telusuri syarat Advanced Access / App Review (`docs/meta-app-review.md`).
+4. Setelah inbound terbukti: uji balasan kata kunci ke akun uji; AI nyata dan Live penuh tetap perlu izin pemilik.
+
 ## Menuju live — daftar periksa
 
 "Live" di sini berarti orang lain bisa mendaftar, menghubungkan akun Instagram mereka sendiri, dan komentar
@@ -383,7 +409,7 @@ Tanpa ini hanya akun tester yang bisa terhubung. Yang diminta Meta dan statusnya
 ### 4. Sebelum membuka pendaftaran ke umum
 
 - **Rate limit**: ada di kode (`server/ratelimit.js`, migrasi 0006, teruji di PostgreSQL lokal termasuk request
-  serentak). **Belum aktif di hosted sampai migrasi 0006 dijalankan**; sebelum itu limiter sengaja meloloskan request.
+  serentak). **Aktif di hosted**: migrasi 0006 sudah diterapkan dan dibaca ulang.
 - **Tulis ulang teks dan desain** yang berasal dari Repliz (risiko 7). Halaman login sudah ditulis dan ditata
   ulang, dan halaman publik memang buatan sendiri. Yang masih berasal dari Repliz: isi `src/locales/*.json`
   (teks halaman pengaturan) dan tata letak shell aplikasi di balik login.

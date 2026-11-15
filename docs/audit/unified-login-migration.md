@@ -18,7 +18,7 @@ mengembalikan salinan 2024; bila bertentangan, baca halaman resmi live/HTML lang
 | Supabase Auth | Site URL dan redirect tepat `https://jawabin-kc75.vercel.app` tersimpan; signup UI → profil Danu/free; pengguna mengonfirmasi email lalu login | Tidak membuktikan OAuth Instagram |
 | Vercel `dnu88s-projects/jawabin-kc75` | Deployment `6A5yiGqFTH1KYDcviPGGeS8wFRBM` Ready; env Supabase publik, service-role dan encryption key privat | Bukan deployment Unified Login |
 | API hosted | JWT login: `/api/profile`, `/api/dashboard`, `/api/chats` 200; chats anonim 401 | Tidak membuktikan angka dashboard pada data Meta, simpan notifikasi, atau Log Aktivitas |
-| Meta app `1128649916573434` | Jawabin Testing Unpublished; business Danu Budiarto `247027059222350`; tester `danubudiarto` diterima | Business/Creator hanya pernyataan pengguna, belum verifikasi independen |
+| Meta app `1128649916573434` | Jawabin Testing **Published** sejak 2026-11-16 (ikon, URL privasi/ketentuan/penghapusan data, kategori diisi); business Danu Budiarto `247027059222350`; tester `danubudiarto` diterima | Business/Creator hanya pernyataan pengguna, belum verifikasi independen |
 | Meta permissions/config | `instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages` Ready for testing; config `2478745309323339` tersimpan, Instagram Login Compatible Selected | Belum token, OAuth, atau subscription |
 | Redirect Meta | `https://jawabin-kc75.vercel.app/api/instagram/callback` tersimpan dan dibaca ulang | Tidak membuktikan callback runtime |
 
@@ -68,13 +68,13 @@ publishing/ads yang diperlukan dalam lingkup ini. Business target bukan indo.exp
 | Mode Unified di live | **PASS** — `/api/instagram/authorize` (JWT login nyata) mengembalikan `www.facebook.com/dialog/oauth` dengan `client_id=1128649916573434`, `config_id=2478745309323339`, `redirect_uri=…/api/instagram/callback`, `response_type=code`, `state` bertanda tangan; tanpa `scope` legacy |
 | OAuth + discovery + encrypted persistence | **PASS** — OAuth Unified diselesaikan pemilik akun untuk `@danubudiarto`; baris `accounts` terbaca ulang: `auth_mode=unified_login`, `client_business_id=247027059222350`, `login_config_id=2478745309323339`, `platform_user_id=17841401873824846`, token tersimpan terenkripsi, `token_expires_at=2027-01-14` (sesuai konfigurasi 60 hari). UI menampilkan pesan tersambung, yang hanya terjadi setelah readback subscription lolos |
 | Subscription + webhook config/readback | **PASS (konfigurasi)** — `META_VERIFY_TOKEN` dipasang; uji endpoint: token benar → 200 + challenge, token salah → 403. Langganan app dibuat lewat Graph `POST /{app-id}/subscriptions` (`object=instagram`, callback `…/api/webhook/meta`, fields `comments,messages`) dan readback mengonfirmasi `active: true` dengan field yang sama. Langganan per akun dilakukan saat connect |
-| Hosted 0006 (rate limit) | **Belum diterapkan** — readback read-only 2026-11-15: `public.rate_limits` dan `hit_rate_limit` tidak ada; limiter sengaja meloloskan request |
+| Hosted 0006 (rate limit) | **PASS** — diterapkan dalam satu transaksi dengan readback; dibaca ulang read-only 2026-11-16: `public.rate_limits` dan `hit_rate_limit` ada |
 | Webhook retry saat gagal simpan | **PASS unit** — gagal simpan komentar/DM → 500 setelah sisa batch diproses; gagal setelah tersimpan → log + 200 (tidak ada balasan ganda saat retry) |
-| Real inbound comments/DM | **Pending** — butuh komentar/DM nyata dari akun Instagram lain; eligibility tester bukan bukti delivery |
+| Real inbound comments/DM | **FAIL / belum terbukti** — komentar dan DM dari `trasistydevi` (tester) sebelum dan sesudah app dipublikasikan tidak sampai: DB 0 komentar/chat/pesan, log Vercel `/api/webhook/meta` tanpa request dari Meta. Tes webhook dari dashboard Meta sampai dan dijawab 200, jadi jalur Meta→Vercel→handler hidup. Penyebab belum diketahui; lihat PLAN.md "Serah-terima terakhir" |
 | Real outbound / AI / Live / App Review | **Di luar izin saat ini** — membalas komentar/DM mengirim konten publik, butuh persetujuan eksplisit per aksi |
 
 Dokumentasi Meta tentang testing Standard/role dan syarat Live/Advanced untuk webhook
-komentar belum konsisten. Jangan menjanjikan end-to-end pada app Unpublished, menaikkan
+komentar belum konsisten. Jangan menjanjikan end-to-end, menaikkan
 akses, atau mempublikasikan app untuk melewati gate ini tanpa persetujuan baru.
 
 ## Reproduksi aman

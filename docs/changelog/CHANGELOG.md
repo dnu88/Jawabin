@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-16 — serah-terima
+
+- Dokumen disamakan dengan kondisi hosted: migrasi 0006 diterapkan (readback ulang), app Meta Published.
+- Inbound komentar/DM dari akun tester masih belum masuk; temuan dan langkah berikutnya ada di PLAN.md "Serah-terima terakhir".
+
 ## Belum dirilis — halaman publik dan perbaikan keamanan
 
 ### Perubahan kode

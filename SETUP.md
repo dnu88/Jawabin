@@ -18,8 +18,8 @@ pada migration history; **jangan jalankan ulang hanya karena history kosong**.
   lalu login dan akses API terautentikasi berhasil.
 - Migrasi `0005_instagram_unified_login.sql` **sudah diterapkan** (2026-11-15, dalam transaksi);
   readback katalog: kolom Unified ada, RPC hanya `service_role`, RLS aktif.
-- Migrasi `0006_rate_limits.sql` **belum diterapkan di hosted**. Jalankan isinya di SQL Editor Supabase;
-  sebelum itu rate limit tidak aktif (lihat bagian "Rate limit" di bawah).
+- Migrasi `0006_rate_limits.sql` **sudah diterapkan** (2026-11-15, satu transaksi + readback; dibaca ulang
+  2026-11-16: tabel `rate_limits` dan fungsi `hit_rate_limit` ada). Rate limit aktif (lihat bagian "Rate limit").
 - Jangan menjalankan `supabase db reset` terhadap proyek hosted.
 
 Untuk proyek baru, jalankan migrasi yang sudah direview berurutan; ambil URL, anon key,
@@ -56,7 +56,7 @@ legacy tetap menjadi default. Jangan mengganti kredensial legacy dengan kredensi
 
 Konfigurasi eksternal sudah dibaca ulang:
 
-- **Jawabin Testing** `1128649916573434`, **Unpublished**, terkait business Danu Budiarto
+- **Jawabin Testing** `1128649916573434`, **Published** (dipublikasikan 2026-11-16 lewat dashboard; sebelumnya Unpublished), terkait business Danu Budiarto
   `247027059222350` (bukan indo.explained).
 - Tester `danubudiarto` diterima (Pending hilang). Status Business/Creator adalah
   keterangan pengguna; verifikasi independen masih pending.
@@ -133,7 +133,7 @@ Fitur mock dan rencana lanjutan tetap tercatat di [`PLAN.md`](PLAN.md).
 
 ## Rate limit
 
-`supabase/migrations/0006_rate_limits.sql` membuat penghitung request. Setelah dijalankan, server membatasi
+`supabase/migrations/0006_rate_limits.sql` membuat penghitung request. Karena sudah diterapkan di hosted, server membatasi
 tiap pengguna: 120 request per menit secara umum, 10 per menit untuk simpan pengaturan AI, 30 per menit untuk
 kirim balasan dan DM, 5 per jam untuk hapus akun; callback OAuth dibatasi 30 per menit per alamat IP.
 Webhook Meta dan `/api/health` tidak dibatasi. **Selama migrasi ini belum dijalankan, pembatasan tidak aktif**
