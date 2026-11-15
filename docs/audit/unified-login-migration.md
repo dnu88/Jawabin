@@ -63,12 +63,13 @@ publishing/ads yang diperlukan dalam lingkup ini. Business target bukan indo.exp
 | Build dan e2e demo | **PASS working tree** — `npm run build` sukses; `PLAYWRIGHT_CHANNEL=chrome npx playwright test`: 31 passed |
 | Integrasi DB nyata + Graph stub | **PASS working tree** — `npm run test:integration`: 12 passed (tidak skipped), stack scratch memuat 0001–0005; suite ini menguji jalur DM legacy, bukan OAuth Unified nyata |
 | Review hijau | **PASS dengan batas** — dua P1 dari review sudah diperbaiki: RPC menolak transisi antarjenis login sebelum write (`P0002`, baris lama utuh), dan refresh token legacy memakai compare-and-swap `auth_mode` + ciphertext lalu memuat ulang akun aktif bila kalah balapan. Transisi legacy↔Unified untuk akun yang sama **belum didukung**; akun harus diputus dulu. Perilaku ini belum diuji ke Meta nyata |
-| Hosted 0005 | **Pending** — preflight, transaksi, katalog kolom/constraint/RPC ACL setelah write |
-| Env Meta + deployment Unified | **Pending** — presence-only env readback, deployment ID/commit/Ready dan smoke API |
-| OAuth + discovery + encrypted persistence | **Pending** — jangan simpan code/token dalam laporan |
-| Subscription + webhook config/readback | **Pending**, belum ada webhook dikonfigurasi |
-| Real inbound comments/DM | **Pending**, eligibility tester bukan bukti delivery |
-| Real outbound / AI / Live / App Review | **Di luar izin saat ini** |
+| Hosted 0005 | **PASS** — diterapkan via Supabase Management API dalam transaksi pada 2026-11-15; readback: kolom `auth_mode`/`client_business_id`/`login_config_id` ada, constraint `accounts_unified_metadata` ada, RLS aktif, RPC hanya `service_role` (anon/authenticated ditolak), 0 baris akun |
+| Env Meta + deployment Unified | **PASS** — `META_APP_ID`, `META_LOGIN_CONFIG_ID`, `INSTAGRAM_LOGIN_MODE=unified`, `META_APP_SECRET` tersimpan di Production; deployment `dpl_97ZN7bB64mHeSJUPGFMC7fRx5ub3` READY; `/api/health` 200, `/api/chats` anonim 401 |
+| Mode Unified di live | **PASS** — `/api/instagram/authorize` (JWT login nyata) mengembalikan `www.facebook.com/dialog/oauth` dengan `client_id=1128649916573434`, `config_id=2478745309323339`, `redirect_uri=…/api/instagram/callback`, `response_type=code`, `state` bertanda tangan; tanpa `scope` legacy |
+| OAuth + discovery + encrypted persistence | **PASS** — OAuth Unified diselesaikan pemilik akun untuk `@danubudiarto`; baris `accounts` terbaca ulang: `auth_mode=unified_login`, `client_business_id=247027059222350`, `login_config_id=2478745309323339`, `platform_user_id=17841401873824846`, token tersimpan terenkripsi, `token_expires_at=2027-01-14` (sesuai konfigurasi 60 hari). UI menampilkan pesan tersambung, yang hanya terjadi setelah readback subscription lolos |
+| Subscription + webhook config/readback | **PASS (konfigurasi)** — `META_VERIFY_TOKEN` dipasang; uji endpoint: token benar → 200 + challenge, token salah → 403. Langganan app dibuat lewat Graph `POST /{app-id}/subscriptions` (`object=instagram`, callback `…/api/webhook/meta`, fields `comments,messages`) dan readback mengonfirmasi `active: true` dengan field yang sama. Langganan per akun dilakukan saat connect |
+| Real inbound comments/DM | **Pending** — butuh komentar/DM nyata dari akun Instagram lain; eligibility tester bukan bukti delivery |
+| Real outbound / AI / Live / App Review | **Di luar izin saat ini** — membalas komentar/DM mengirim konten publik, butuh persetujuan eksplisit per aksi |
 
 Dokumentasi Meta tentang testing Standard/role dan syarat Live/Advanced untuk webhook
 komentar belum konsisten. Jangan menjanjikan end-to-end pada app Unpublished, menaikkan
