@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // A small in-memory Supabase: enough of the query builder for server/chat.js and
 // the chat routes, so the filters and the duplicate-message guard are real code.
-const state = vi.hoisted(() => ({ chats: [], messages: [], rules: [] }))
+const state = vi.hoisted(() => ({ chats: [], messages: [], rules: [], failInsert: null }))
 
 vi.mock('@supabase/supabase-js', () => {
   const list = (table) => (state[table] ||= [])
@@ -19,6 +19,9 @@ vi.mock('@supabase/supabase-js', () => {
     const q = { table, filters: [], payload: null, mode: 'select', limit: null, range: null, head: false, wantCount: false }
     const op = () => {
       if (q.mode == 'insert' || q.mode == 'upsert') {
+        if (state.failInsert && q.mode == 'insert' && table == 'messages' && state.failInsert(q.payload)) {
+          return { data: null, error: { code: '08006', message: 'connection failure' } }
+        }
         if (q.mode == 'insert' && table == 'messages' && q.payload.platform_message_id) {
           const seen = list(table).some((row) => row.platform_message_id === q.payload.platform_message_id)
           if (seen) return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } }
@@ -152,6 +155,7 @@ beforeEach(() => {
   state.chats = []
   state.messages = []
   state.rules = []
+  state.failInsert = null
   vi.resetAllMocks()
   sendMessage.mockResolvedValue({ message_id: 'sent-1' })
   loadSettings.mockResolvedValue({ type: 'gemini', model: 'm', token: 't' })
@@ -235,6 +239,30 @@ describe('receiveMessage', () => {
     expect(result.replied).toBe(false)
     const failed = state.messages.find((row) => row.direction == 'out')
     expect(failed.error).toMatch(/outside window/)
+  })
+
+  // Storage errors must reach the webhook (500, Meta retries); anything after
+  // the inbound row is stored must not, so a retry can never send twice.
+  it('throws when the inbound message cannot be stored, without answering', async () => {
+    state.rules = [keywordRule()]
+    state.failInsert = (row) => row.direction == 'in'
+    await expect(receiveMessage(account, inbound())).rejects.toMatchObject({ status: 500 })
+    expect(sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('does not throw after the reply was sent, even if recording it fails', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.rules = [keywordRule()]
+    state.failInsert = (row) => row.direction == 'out'
+    const result = await receiveMessage(account, inbound())
+    expect(result.replied).toBe(false)
+    expect(sendMessage).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toBe('message reply failed')
+    // A retry of the same delivery is a duplicate and does not send again.
+    state.failInsert = null
+    expect((await receiveMessage(account, inbound())).duplicate).toBe(true)
+    expect(sendMessage).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
   })
 
   // The following shapes are the ones Meta documents for messaging webhooks.

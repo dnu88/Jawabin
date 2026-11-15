@@ -33,7 +33,10 @@ async function handleComment(igUserId, value, modes) {
     if (error.code == '23505') return // already stored: Meta retries deliveries
     throw new HttpError(500, error.message)
   }
-  await autoReply(account, comment)
+  // The comment is stored from here on. A reply failure must not make Meta
+  // retry: the retry would only hit the duplicate above, and must never risk a
+  // second public reply.
+  await autoReply(account, comment).catch((error) => console.error('comment reply failed', error.message))
 }
 
 async function handleMessage(igUserId, value, modes) {
@@ -57,11 +60,19 @@ export async function receiveWebhook(request) {
   }
   if (!modes.size) throw new HttpError(401, 'bad signature')
   const payload = JSON.parse(raw)
+  // Storage failures are collected, the rest of the batch is still handled,
+  // and then the delivery is answered 500 so Meta retries it. Retrying is safe:
+  // stored comments and messages are deduplicated by their platform id.
+  const failures = []
+  const record = (kind) => (error) => {
+    console.error(`${kind} failed`, error.message)
+    failures.push(kind)
+  }
   if (payload.object == 'instagram') {
     for (const entry of payload.entry || []) {
       // Documented shape for messaging (Business Login for Instagram): entry[].messaging[].
       for (const event of entry.messaging || []) {
-        await handleMessage(entry.id, event, modes).catch((error) => console.error('message failed', error.message))
+        await handleMessage(entry.id, event, modes).catch(record('message'))
       }
       // Comments arrive in changes[]; the Business Login examples also put
       // field/value straight on the entry, so accept both.
@@ -69,13 +80,14 @@ export async function receiveWebhook(request) {
       for (const change of changes) {
         // Older/unified setups wrap messages as a change with field "messages".
         if (change.field == 'messages') {
-          await handleMessage(entry.id, change.value, modes).catch((error) => console.error('message failed', error.message))
+          await handleMessage(entry.id, change.value, modes).catch(record('message'))
           continue
         }
         if (change.field != 'comments' && change.field != 'live_comments') continue
-        await handleComment(entry.id, change.value, modes).catch((error) => console.error('comment failed', error.message))
+        await handleComment(entry.id, change.value, modes).catch(record('comment'))
       }
     }
   }
+  if (failures.length) throw new HttpError(500, 'webhook storage failed')
   return json({ ok: true })
 }

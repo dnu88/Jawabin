@@ -2,16 +2,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The Supabase client is faked; the signature check, the skip rules and the
 // duplicate handling in server/routes/webhook.js are the real code under test.
-const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [], chat: [] }))
+const state = vi.hoisted(() => ({ client: null, inserts: [], autoReply: [], chat: [], autoReplyError: null, chatError: null }))
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({ from: (table) => state.client.from(table), auth: { getUser: async () => ({}) } }),
 }))
 vi.mock('../../server/autoreply.js', () => ({
-  autoReply: async (...args) => state.autoReply.push(args),
+  autoReply: async (...args) => {
+    state.autoReply.push(args)
+    if (state.autoReplyError) throw state.autoReplyError
+  },
 }))
 vi.mock('../../server/chat.js', () => ({
-  receiveMessage: async (...args) => state.chat.push(args),
+  receiveMessage: async (...args) => {
+    state.chat.push(args)
+    if (state.chatError) throw state.chatError
+  },
 }))
 
 const { receiveWebhook, verifyWebhook } = await import('../../server/routes/webhook.js')
@@ -77,6 +83,8 @@ beforeEach(() => {
   state.inserts = []
   state.autoReply = []
   state.chat = []
+  state.autoReplyError = null
+  state.chatError = null
   state.client = fakeClient()
 })
 
@@ -201,27 +209,39 @@ describe('receiveWebhook (POST)', () => {
     expect(state.inserts).toHaveLength(0)
   })
 
-  // Documents current behaviour, not ideal behaviour: a failed insert is logged
-  // and swallowed, so Meta still receives 200 and will NOT retry the delivery.
-  // If that is undesirable, let the error escape and return 500 instead.
-  it('swallows a failed insert, answers 200 and logs it', async () => {
+  // A comment that could not be stored must not be lost silently: the delivery
+  // is answered 500 so Meta retries it. Retries are safe because stored
+  // comments are deduplicated by platform_comment_id (23505 above).
+  it('answers 500 and logs it when a comment cannot be stored, so Meta retries', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     state.client = fakeClient({ insertError: { code: '42P01', message: 'relation "comments" does not exist' } })
-    const response = await receiveWebhook(signedPost(payload()))
-    expect(response.status).toBe(200)
+    await expect(receiveWebhook(signedPost(payload()))).rejects.toMatchObject({ status: 500 })
     expect(spy.mock.calls[0][0]).toBe('comment failed')
     expect(spy.mock.calls[0][1]).toMatch(/does not exist/)
+    expect(state.autoReply).toHaveLength(0)
     spy.mockRestore()
   })
 
-  it('keeps going when one entry fails, so the rest of the batch is still handled', async () => {
+  it('still handles the rest of the batch before answering 500', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const body = payload()
     body.entry.push(JSON.parse(JSON.stringify(body.entry[0])))
     state.client = fakeClient({ insertError: { code: '42P01', message: 'boom' } })
-    const response = await receiveWebhook(signedPost(body))
+    await expect(receiveWebhook(signedPost(body))).rejects.toMatchObject({ status: 500 })
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(2)
+    expect(spy).toHaveBeenCalledTimes(2)
+    spy.mockRestore()
+  })
+
+  // Once the comment is stored, a retry would only hit the duplicate check, so
+  // a reply failure is logged and the delivery still answers 200.
+  it('answers 200 when the comment is stored but the auto reply fails', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.autoReplyError = new Error('graph down')
+    const response = await receiveWebhook(signedPost(payload()))
     expect(response.status).toBe(200)
-    expect(spy).toHaveBeenCalled()
+    expect(state.autoReply).toHaveLength(1)
+    expect(spy.mock.calls[0][0]).toBe('comment reply failed')
     spy.mockRestore()
   })
 })
@@ -281,6 +301,17 @@ describe('direct message deliveries', () => {
     state.client = fakeClient({ account: null })
     await receiveWebhook(signedPost(messagePayload()))
     expect(state.chat).toHaveLength(0)
+  })
+
+  it('answers 500 when a message cannot be stored, after handling the comment in the same delivery', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    state.chatError = Object.assign(new Error('insert failed'), { status: 500 })
+    const body = payload()
+    body.entry[0].messaging = [messagePayload().entry[0].messaging[0]]
+    await expect(receiveWebhook(signedPost(body))).rejects.toMatchObject({ status: 500 })
+    expect(state.inserts.filter((call) => call.table == 'comments')).toHaveLength(1)
+    expect(spy.mock.calls[0][0]).toBe('message failed')
+    spy.mockRestore()
   })
 
   it('handles comments and messages in one delivery', async () => {

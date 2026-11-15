@@ -40,8 +40,10 @@ async function bumpChat(chatId, values) {
   check(await db().from('chats').update(values).eq('id', chatId))
 }
 
-// Stores an inbound DM and lets the chat rules answer it. The returned object is
-// only used by tests: the webhook answers 200 either way.
+// Stores an inbound DM and lets the chat rules answer it. Storage errors are
+// thrown so the webhook answers 500 and Meta retries; anything after the
+// message is stored is only logged, so a retry can never send a second reply.
+// The returned object is only used by tests.
 export async function receiveMessage(account, value) {
   const message = value?.message || {}
   const sender = String(value?.sender?.id || '')
@@ -88,11 +90,15 @@ export async function receiveMessage(account, value) {
     platform_message_id: mid,
   })
   if (!stored) return { chat, duplicate: true }
-  // Read-modify-write on purpose: one writer per chat in practice, and a counter
-  // is enough for the badge. A wrong count is cosmetic, a lost message is not.
-  await bumpChat(chat.id, { unread: (chat.unread || 0) + 1 })
-
-  return { chat, replied: text ? await autoReplyChat(account, chat, { text, mid }) : false }
+  try {
+    // Read-modify-write on purpose: one writer per chat in practice, and a counter
+    // is enough for the badge. A wrong count is cosmetic, a lost message is not.
+    await bumpChat(chat.id, { unread: (chat.unread || 0) + 1 })
+    return { chat, replied: text ? await autoReplyChat(account, chat, { text, mid }) : false }
+  } catch (error) {
+    console.error('message reply failed', error.message)
+    return { chat, replied: false }
+  }
 }
 
 async function autoReplyChat(account, chat, message) {
