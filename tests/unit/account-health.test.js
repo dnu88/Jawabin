@@ -46,8 +46,9 @@ let calls
 // Every check reads the account type first: messaging does not exist for a
 // Creator account, so the type is part of the diagnosis.
 const profile = (accountType = 'BUSINESS') => ({ id: '101', username: 'mock-shop', account_type: accountType })
+const tokenInfo = { data: { app_id: '1234567890', type: 'SYSTEM_USER', is_valid: true, scopes: ['instagram_business_basic', 'instagram_business_manage_comments', 'instagram_business_manage_messages'], expires_at: 1800000000 } }
 function responses(...items) {
-  const queue = [profile(), ...items]
+  const queue = [profile(), tokenInfo, ...items]
   vi.stubGlobal('fetch', vi.fn(async (url, options = {}) => {
     calls.push({ url: new URL(url), ...options })
     const item = queue.shift()
@@ -79,10 +80,11 @@ it('reports a healthy subscription without touching the subscription', async () 
   expect(result).toMatchObject({ accountId: 'acc-1', subscribed: true, action: 'checked', error: null })
   expect(result.fields).toEqual(['comments', 'messages'])
   expect(result.accountType).toBe('BUSINESS')
-  expect(calls).toHaveLength(2)
+  expect(calls).toHaveLength(3)
   expect(calls[0].url.searchParams.get('fields')).toBe('username,account_type')
-  expect(calls[1].method || 'GET').toBe('GET')
-  expect(calls[1].url.pathname).toBe('/v27.0/101/subscribed_apps')
+  expect(calls[1].url.pathname).toBe('/v27.0/debug_token')
+  expect(calls[2].method || 'GET').toBe('GET')
+  expect(calls[2].url.pathname).toBe('/v27.0/101/subscribed_apps')
   expect(state.inserts[0].row).toMatchObject({ account_id: 'acc-1', subscribed: true, action: 'checked', error: null })
 })
 
@@ -90,8 +92,8 @@ it('re-subscribes when the readback is empty, then proves it by reading back aga
   responses({ data: [] }, { success: true }, subscribed)
   const result = await checkAccount(account)
   expect(result).toMatchObject({ subscribed: true, action: 'resubscribed' })
-  expect(calls[2].method).toBe('POST')
-  expect(calls[2].url.searchParams.get('subscribed_fields')).toBe('comments,messages')
+  expect(calls[3].method).toBe('POST')
+  expect(calls[3].url.searchParams.get('subscribed_fields')).toBe('comments,messages')
   expect(state.inserts[0].row).toMatchObject({ subscribed: true, action: 'resubscribed' })
 })
 
@@ -99,7 +101,7 @@ it('stops at missing when repair is not allowed', async () => {
   responses({ data: [] })
   const result = await checkAccount(account, { repair: false })
   expect(result).toMatchObject({ subscribed: false, action: 'missing' })
-  expect(calls).toHaveLength(2)
+  expect(calls).toHaveLength(3)
 })
 
 it('records a Graph failure instead of throwing, without leaking the token', async () => {
@@ -134,7 +136,7 @@ it('answers from the cache inside the window and calls Graph on force', async ()
   const fresh = await checkAccounts([account], { force: true })
   expect(fresh[0]).toMatchObject({ subscribed: true, action: 'checked' })
   expect(fresh[0].cached).toBeUndefined()
-  expect(calls).toHaveLength(2)
+  expect(calls).toHaveLength(3)
 })
 
 it('does not let a broken cache hide the live check', async () => {
@@ -152,7 +154,7 @@ it('keeps the cache window short enough to stay useful', () => {
 })
 
 it('records the account type so a Creator account is not mistaken for a broken subscription', async () => {
-  const queue = [{ id: '101', username: 'mock-shop', account_type: 'MEDIA_CREATOR' }, subscribed]
+  const queue = [{ id: '101', username: 'mock-shop', account_type: 'MEDIA_CREATOR' }, tokenInfo, subscribed]
   vi.stubGlobal('fetch', vi.fn(async (url) => {
     calls.push({ url: new URL(url) })
     const item = queue.shift()
@@ -161,6 +163,7 @@ it('records the account type so a Creator account is not mistaken for a broken s
   }))
   const result = await checkAccount(account)
   expect(result.accountType).toBe('MEDIA_CREATOR')
+  expect(result.tokenAppId).toBe('1234567890')
   expect(result.subscribed).toBe(true)
   expect(state.inserts[0].row).toMatchObject({ account_type: 'MEDIA_CREATOR', subscribed: true })
 })

@@ -1,6 +1,6 @@
 import { HttpError } from './http.js'
 import { db } from './db.js'
-import { accountProfile, applySubscription, subscriptionState } from './instagram.js'
+import { accountProfile, applySubscription, subscriptionState, tokenInfo } from './instagram.js'
 
 // Verifies that Meta is allowed to deliver comments and messages for this
 // account, and re-applies the subscription when it is missing. Never throws:
@@ -8,6 +8,7 @@ import { accountProfile, applySubscription, subscriptionState } from './instagra
 export async function checkAccount(account, { repair = true } = {}) {
   let state = null
   let profile = null
+  let token = null
   let action = 'checked'
   let error = null
   try {
@@ -15,6 +16,10 @@ export async function checkAccount(account, { repair = true } = {}) {
     // must not stop the subscription check that actually repairs things.
     profile = await accountProfile(account).catch((failure) => {
       console.error('account profile unreadable', failure.message)
+      return null
+    })
+    token = await tokenInfo(account).catch((failure) => {
+      console.error('account token unreadable', failure.message)
       return null
     })
     state = await subscriptionState(account)
@@ -33,6 +38,9 @@ export async function checkAccount(account, { repair = true } = {}) {
     accountId: account.id,
     username: account.username,
     accountType: profile?.accountType || '',
+    tokenAppId: token?.appId || '',
+    tokenScopes: token?.scopes || [],
+    tokenValid: token ? token.valid : null,
     subscribed: Boolean(state?.subscribed),
     fields: state?.fields || [],
     action,
@@ -42,6 +50,9 @@ export async function checkAccount(account, { repair = true } = {}) {
     await db().from('account_checks').insert({
       account_id: account.id,
       account_type: result.accountType || null,
+      token_app_id: result.tokenAppId || null,
+      token_scopes: result.tokenScopes.length ? result.tokenScopes : null,
+      token_valid: result.tokenValid,
       subscribed: result.subscribed,
       fields: result.fields,
       action: result.action,

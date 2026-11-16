@@ -61,6 +61,26 @@ async function call(url, options = {}) {
   return data
 }
 
+// What Meta thinks the stored token is: which app issued it, which scopes it
+// really carries, and whether it is still valid. A silent webhook is often a
+// token minted by a different app than the one whose callback is configured, and
+// nothing else in the app can see that.
+export async function tokenInfo(account) {
+  const token = await accountToken(account)
+  const appAccess = `${env('META_APP_ID')}|${env('META_APP_SECRET')}`
+  const data = await call(`https://graph.facebook.com/v27.0/debug_token?${new URLSearchParams({ input_token: token })}`, {
+    headers: { authorization: `Bearer ${appAccess}` },
+  })
+  const info = data.data || data
+  return {
+    appId: info.app_id ? String(info.app_id) : '',
+    type: typeof info.type === 'string' ? info.type : '',
+    valid: Boolean(info.is_valid),
+    scopes: Array.isArray(info.scopes) ? info.scopes.map(String) : [],
+    expiresAt: info.expires_at ? new Date(info.expires_at * 1000).toISOString() : '',
+  }
+}
+
 export function authorizeUrl(redirectUri, state, mode = loginMode()) {
   if (mode === 'unified_login') {
     const { appId, configId } = unifiedConfig()
