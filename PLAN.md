@@ -428,6 +428,14 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
 - Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
   "English answers for the review form".
+- **Introspeksi token (2026-11-16):** `debug_token` menjawab `app_id=1128649916573434` — app yang
+  sama dengan pemilik callback — `is_valid=true`, dan scope lengkap
+  (`instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages`, `public_profile`).
+  Daftar peran app (`GET /{app-id}/roles`) hanya berisi **satu administrator, tanpa tester**.
+  Jadi dugaan "token dari app lain" gugur, dan celah yang tersisa persis di izin peran pengirim:
+  di Standard Access, event hanya dikirim untuk akun yang punya peran di app. Langkah berikutnya:
+  daftarkan pengirim uji sebagai **Instagram tester** di app ini, terima undangannya dari akun
+  Instagram itu, lalu kirim DM lagi.
 - Verifikasi Search Console tidak lagi butuh round-trip: `server/routes/siteverify.js`
   menjawab `/google<token>.html` dengan baris yang dibaca Google (rewrite di `vercel.json`,
   pola ketat, nama lain 404). Diuji di produksi `8c8f11b`. Jadi pemilik cukup menambah
