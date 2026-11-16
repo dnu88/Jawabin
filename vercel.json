@@ -1,12 +1,27 @@
 {
   "functions": {
-    "api/index.js": { "maxDuration": 60 }
+    "api/index.js": {
+      "maxDuration": 60
+    }
   },
   "crons": [
-    { "path": "/api/cron/accounts", "schedule": "0 2 * * *" }
+    {
+      "path": "/api/cron/accounts",
+      "schedule": "0 2 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index?__path=$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index?__path=$1"
+    },
+    {
+      "source": "/:file(google[a-zA-Z0-9]+\\.html)",
+      "destination": "/api/index?__path=siteverify&file=:file"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

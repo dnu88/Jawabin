@@ -7,6 +7,7 @@ import { getChat, listChats, sendChatMessage } from '../server/routes/chats.js'
 import { listComments, replyComment, updateComment } from '../server/routes/comments.js'
 import { createRule, deleteRule, listRules, updateRule } from '../server/routes/rules.js'
 import { receiveWebhook, verifyWebhook } from '../server/routes/webhook.js'
+import { siteVerification } from '../server/routes/siteverify.js'
 import { deleteProfile, getProfile, putNotification } from '../server/routes/profile.js'
 import { listActivities, logActivity } from '../server/activity.js'
 import { CALLBACK_LIMIT, LIMITS, clientIp, rateLimit } from '../server/ratelimit.js'
@@ -57,6 +58,8 @@ async function handle(request) {
   const method = request.method
 
   if (path == 'health') return json({ ok: true })
+  // Search Console ownership check: answered from the token in the URL itself.
+  if (path == 'siteverify' && method == 'GET') return siteVerification(url.searchParams.get('file'))
   if (path == 'webhook/meta') return method == 'GET' ? verifyWebhook(url) : receiveWebhook(request)
   // Vercel cron: verifies and repairs the webhook subscription on every account
   // without anyone opening the app. Vercel sends `authorization: Bearer $CRON_SECRET`.
