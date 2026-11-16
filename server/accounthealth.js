@@ -1,15 +1,19 @@
 import { HttpError } from './http.js'
 import { db } from './db.js'
-import { applySubscription, subscriptionState } from './instagram.js'
+import { accountProfile, applySubscription, subscriptionState } from './instagram.js'
 
 // Verifies that Meta is allowed to deliver comments and messages for this
 // account, and re-applies the subscription when it is missing. Never throws:
 // callers store the outcome instead of failing a page load or a cron run.
 export async function checkAccount(account, { repair = true } = {}) {
   let state = null
+  let profile = null
   let action = 'checked'
   let error = null
   try {
+    // Read the account type first: without it, a Creator account looks exactly
+    // like a broken subscription.
+    profile = await accountProfile(account)
     state = await subscriptionState(account)
     if (!state.subscribed && repair) {
       state = await applySubscription(account)
@@ -25,6 +29,7 @@ export async function checkAccount(account, { repair = true } = {}) {
   const result = {
     accountId: account.id,
     username: account.username,
+    accountType: profile?.accountType || '',
     subscribed: Boolean(state?.subscribed),
     fields: state?.fields || [],
     action,
@@ -33,6 +38,7 @@ export async function checkAccount(account, { repair = true } = {}) {
   try {
     await db().from('account_checks').insert({
       account_id: account.id,
+      account_type: result.accountType || null,
       subscribed: result.subscribed,
       fields: result.fields,
       action: result.action,

@@ -245,6 +245,17 @@ async function subscribedApps(base, token, appId) {
   }
 }
 
+// The professional account type decides which APIs exist at all: messaging is
+// only available for BUSINESS accounts, so a MEDIA_CREATOR account can have a
+// perfect subscription and still receive nothing.
+export async function accountProfile(account) {
+  const token = await accountToken(account)
+  const unified = authMode(account) === 'unified_login'
+  const node = unified ? account.platform_user_id : 'me'
+  const data = await call(`${graph(account)}/${encodeURIComponent(node)}?fields=username,account_type`, { headers: bearer(token) })
+  return { username: typeof data.username === 'string' ? data.username : '', accountType: typeof data.account_type === 'string' ? data.account_type : '' }
+}
+
 export async function subscriptionState(account) {
   const token = await accountToken(account)
   const { appId, base } = subscriptionBase(account)

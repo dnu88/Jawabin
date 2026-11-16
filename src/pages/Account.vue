@@ -109,6 +109,10 @@ onMounted(() => {
               {{ t(`account.webhook.${state.health[doc._id].action == 'resubscribed' ? 'repaired' : 'ok'}`, { fields: (state.health[doc._id].fields || []).join(', ') }) }}
             </span>
             <span v-else class="text-warning">{{ t('account.webhook.missing') }}</span>
+            <span
+              v-if="state.health[doc._id].accountType && state.health[doc._id].accountType != 'BUSINESS'"
+              class="block text-warning"
+            >{{ t('account.webhook.creator', { type: state.health[doc._id].accountType }) }}</span>
           </div>
         </div>
         <button

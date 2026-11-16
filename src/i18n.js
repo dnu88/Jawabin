@@ -33,6 +33,7 @@ const messages = {
       webhook: {
         ok: 'Webhook active ({fields})', repaired: 'Webhook re-subscribed ({fields})', missing: 'Webhook not subscribed',
         failed: 'Webhook check failed: {message}', check: 'Check now',
+        creator: 'Account type {type}: Instagram messaging needs a Business account',
       },
     },
     comment: {
@@ -124,6 +125,7 @@ const messages = {
       webhook: {
         ok: 'Webhook aktif ({fields})', repaired: 'Webhook dipasang ulang ({fields})', missing: 'Webhook belum berlangganan',
         failed: 'Pemeriksaan webhook gagal: {message}', check: 'Periksa lagi',
+        creator: 'Tipe akun {type}: pesan Instagram hanya untuk akun Bisnis',
       },
     },
     comment: {
