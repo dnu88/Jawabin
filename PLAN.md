@@ -417,10 +417,17 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   Diagnosa di sisi server selesai: kode, langganan app, langganan akun, callback, dan tipe akun
   semuanya benar. Yang tersisa hanya kewenangan pengiriman Meta — Standard Access → Advanced Access
   lewat App Review. Itu keputusan Meta, bukan pekerjaan repo.
-- Catatan perilaku produk: memutuskan akun lalu menghubungkan ulang **membuat baris akun baru**
-  (id berubah), dan aturan yang terikat ke akun lama ikut terhapus lewat cascade. Aturan uji
-  "DM uji halo" sudah dibuat ulang untuk akun baru. Kalau reconnect harus rutin, aturan sebaiknya
-  dipindahkan (migrasi) saat connect, bukan dibiarkan terhapus — belum dikerjakan.
+- Catatan perilaku produk (dibuktikan dari `activities`): id akun berubah karena pemilik menekan
+  **Putuskan** lebih dulu — delete itu menghapus baris akun dan **aturan yang terikat ikut hilang**
+  lewat cascade. RPC connect sendiri sudah `on conflict do update`, jadi reconnect tanpa disconnect
+  mempertahankan id dan aturan. Aturan uji "DM uji halo" sudah dibuat ulang untuk akun baru, dan
+  teks konfirmasi Putuskan kini menyebut aturan otomatis ikut terhapus.
+- **Gerbang sebelum submit:** `python3 scripts/review-readiness.py https://<domain>` memeriksa semua
+  yang bisa dilihat Meta dari luar tanpa sesi (halaman publik, health, gerbang auth, penolakan
+  handshake webhook, status Safe Browsing). Status 2026-11-16: **7/8 lolos**; satu-satunya yang
+  gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
+- Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
+  "English answers for the review form".
   Bukti berikutnya: tombol **Test** pada webhook Instagram di dashboard Meta akan meninggalkan
   baris di `webhook_deliveries` bila Meta memang bisa mencapai endpoint ini.
 

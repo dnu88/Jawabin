@@ -59,3 +59,52 @@ Satu video per izin, atau satu video dengan penanda waktu. Tampilkan alamat situ
 - Video tidak memperlihatkan layar persetujuan Meta, atau tidak memperlihatkan hasilnya di Instagram.
 - Deskripsi menyebut fitur yang tidak ada di video.
 - URL privasi atau penghapusan data tidak bisa dibuka tanpa login.
+
+## English answers for the review form (paste as-is)
+
+Meta reviewers read English. The Indonesian text above is the reasoning; the
+blocks below are what goes into the form.
+
+### instagram_basic
+
+> Jawabin shows a user which Instagram professional account is connected and
+> keeps incoming webhooks matched to that account. It reads the account id,
+> username, name and profile picture of accounts the user connects themselves,
+> and displays them on the Account Integration page. Nothing is read from
+> accounts the user has not connected.
+
+### instagram_manage_comments
+
+> Jawabin receives new comments on media owned by the connected account through
+> the webhook, lists them on the Comments page, and posts replies as that
+> account. A reply is sent either when the user writes it, or automatically from
+> a rule the user creates (keyword or AI instruction). The reviewer will see one
+> manual reply and one keyword reply in the screencast.
+
+### instagram_manage_messages
+
+> Jawabin receives direct messages that people send to the connected account,
+> shows them on the Conversations page, and replies within the 24-hour window,
+> either manually or through a rule the user created. Jawabin never starts a
+> conversation and never sends bulk or promotional messages.
+
+### How the app uses each permission (short form field)
+
+> Comments and messages arrive through webhooks for the single Instagram
+> professional account each user connects; replies are published only on that
+> account, only in response to an inbound comment or message, and only when the
+> user sends them or an active rule fires.
+
+## Pre-submission gate
+
+Run this before touching the review form; it answers everything Meta can see
+from outside without a session:
+
+```
+python3 scripts/review-readiness.py https://<domain>
+```
+
+Exit code 0 means every machine-checkable item passes. It deliberately fails on
+a Google Safe Browsing flag, because a reviewer who meets the interstitial will
+reject the submission without opening the app.
+

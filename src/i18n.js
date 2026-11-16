@@ -28,7 +28,7 @@ const messages = {
       note: 'Only Instagram professional accounts (Business or Creator) can be connected.',
       empty: { title: 'No accounts yet', message: 'Connect an Instagram account to start receiving its comments here.' },
       since: 'Connected {time}', remove: 'Disconnect',
-      alert: { title: 'Disconnect this account?', message: 'Comments from @{name} stop coming in, and its stored comments are deleted.' },
+      alert: { title: 'Disconnect this account?', message: 'Comments from @{name} stop coming in, its stored comments are deleted, and the automation rules written for it are removed.' },
       toast: { connected: '@{name} connected', removed: 'Account disconnected' },
       webhook: {
         ok: 'Webhook active ({fields})', repaired: 'Webhook re-subscribed ({fields})', missing: 'Webhook not subscribed',
@@ -120,7 +120,7 @@ const messages = {
       note: 'Hanya akun Instagram profesional (Bisnis atau Kreator) yang bisa dihubungkan.',
       empty: { title: 'Belum ada akun', message: 'Hubungkan akun Instagram supaya komentarnya mulai masuk ke sini.' },
       since: 'Terhubung {time}', remove: 'Putuskan',
-      alert: { title: 'Putuskan akun ini?', message: 'Komentar dari @{name} berhenti masuk, dan komentar yang tersimpan ikut dihapus.' },
+      alert: { title: 'Putuskan akun ini?', message: 'Komentar dari @{name} berhenti masuk, komentar yang tersimpan ikut dihapus, dan aturan otomatis untuk akun ini ikut terhapus.' },
       toast: { connected: '@{name} terhubung', removed: 'Akun diputuskan' },
       webhook: {
         ok: 'Webhook aktif ({fields})', repaired: 'Webhook dipasang ulang ({fields})', missing: 'Webhook belum berlangganan',
