@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // In-memory stand-in for Supabase that understands the filters dashboard.js
 // uses, so the numbers are computed from real rows instead of stubbed constants.
@@ -11,7 +11,10 @@ vi.mock('@supabase/supabase-js', () => ({
 const { getDashboard } = await import('../../server/routes/dashboard.js')
 
 const HOUR = 3600000
-const now = Date.now()
+// Pinned to midday UTC: with the real clock this suite ran into the UTC date
+// boundary right after midnight, where "one hour ago" is already yesterday and
+// every count legitimately drops to zero.
+const now = new Date('2026-11-16T12:00:00Z').getTime()
 
 function fakeDb({ comments = [], accounts = 0, usage = [] } = {}) {
   const rows = { comments, accounts: Array.from({ length: accounts }, (_, i) => ({ id: `a${i}`, user_id: 'user-1' })), ai_usage: usage }
@@ -64,8 +67,11 @@ const comment = (over = {}) => ({
 })
 
 beforeEach(() => {
+  vi.useFakeTimers({ now })
   state.client = fakeDb()
 })
+
+afterEach(() => vi.useRealTimers())
 
 describe('GET /dashboard', () => {
   it('counts today, the last seven days and open work from real rows', async () => {
