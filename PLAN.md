@@ -412,7 +412,15 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   otomatis mencoba membaca `account_type` lewat Graph tetapi field itu tidak ada di v27.0 untuk
   node ini (`(#100) Tried accessing nonexisting field`), jadi tipe akun harus dikonfirmasi pemilik
   di aplikasi Instagram (Pengaturan → Jenis akun).
-- Sisa tersangka lain: kelayakan pengiriman di sisi Meta (Standard Access / Advanced Access).
+- **Setelah akun diganti ke Bisnis dan dihubungkan ulang** (akun baru `a61d4b58…`, token sampai
+  2027-01-15, langganan terverifikasi `comments,messages`), DM dari `trasistydevi` **tetap 0 delivery**.
+  Diagnosa di sisi server selesai: kode, langganan app, langganan akun, callback, dan tipe akun
+  semuanya benar. Yang tersisa hanya kewenangan pengiriman Meta — Standard Access → Advanced Access
+  lewat App Review. Itu keputusan Meta, bukan pekerjaan repo.
+- Catatan perilaku produk: memutuskan akun lalu menghubungkan ulang **membuat baris akun baru**
+  (id berubah), dan aturan yang terikat ke akun lama ikut terhapus lewat cascade. Aturan uji
+  "DM uji halo" sudah dibuat ulang untuk akun baru. Kalau reconnect harus rutin, aturan sebaiknya
+  dipindahkan (migrasi) saat connect, bukan dibiarkan terhapus — belum dikerjakan.
   Bukti berikutnya: tombol **Test** pada webhook Instagram di dashboard Meta akan meninggalkan
   baris di `webhook_deliveries` bila Meta memang bisa mencapai endpoint ini.
 

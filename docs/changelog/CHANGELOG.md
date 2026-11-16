@@ -31,6 +31,10 @@
   `npm run build`: sukses.
 - Migrasi 0008 dan 0009 diterapkan hosted dalam satu transaksi masing-masing; readback: RLS aktif,
   0 policy, `account_checks` 8 kolom, 2 indeks.
+- Setelah akun diubah ke Bisnis dan dihubungkan ulang, DM uji tetap menghasilkan 0 baris di
+  `webhook_deliveries`; kesimpulan: kewenangan pengiriman Meta (Advanced Access/App Review).
+- Temuan produk: reconnect membuat baris `accounts` baru dan aturan lama terhapus lewat cascade;
+  aturan uji sudah dibuat ulang untuk akun baru (lihat PLAN).
 - Pemeriksaan produksi setelah deploy `839b3af`: `subscribed=true`, `fields=[comments,messages]`,
   `action=checked`. Field tipe akun tidak tersedia lewat Graph v27.0 di node ini (error 100), jadi
   tipe akun belum bisa dibaca server-side.
