@@ -1,0 +1,11 @@
+# Jawabin is a storefront comment and DM assistant. Only the public pages below
+# are crawlable; everything else needs a signed-in session.
+User-agent: *
+Allow: /$
+Allow: /privacy
+Allow: /terms
+Allow: /data-deletion
+Disallow: /api/
+Disallow: /user/
+
+Sitemap: https://jawabin-kc75.vercel.app/sitemap.xml
