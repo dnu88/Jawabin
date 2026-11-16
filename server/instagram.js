@@ -249,17 +249,25 @@ export async function subscriptionState(account) {
   return { appId, ...(await subscribedApps(base, token, appId)) }
 }
 
+// Applies the subscription and proves it by reading back. The failure message
+// keeps what Meta actually answered, because the health check has to be able to
+// show a reason; the connect flow below replaces it with user-facing text.
+export async function applySubscription(account) {
+  const token = await accountToken(account)
+  const { appId, base } = subscriptionBase(account)
+  const result = await call(`${base}?subscribed_fields=comments,messages`, { method: 'POST', headers: bearer(token) })
+  const state = await subscribedApps(base, token, appId)
+  if (result.success !== true || !state.subscribed) {
+    throw new HttpError(400, `subscription not applied (success=${result.success === true}, fields=${state.fields.join(',') || 'none'})`)
+  }
+  return state
+}
+
 // Subscribes and proves it by reading back; both the connect flow and the
 // scheduled health check use this so a silent half-subscription cannot pass.
 export async function subscribeAccount(account) {
-  const token = await accountToken(account)
-  const { appId, base } = subscriptionBase(account)
   try {
-    const result = await call(`${base}?subscribed_fields=comments,messages`, { method: 'POST', headers: bearer(token) })
-    if (result.success !== true) throw new Error('not subscribed')
-    const state = await subscribedApps(base, token, appId)
-    if (!state.subscribed) throw new Error('not verified')
-    return state
+    return await applySubscription(account)
   } catch {
     throw new HttpError(400, 'Instagram webhook subscription failed; please connect again')
   }

@@ -1,6 +1,6 @@
 import { HttpError } from './http.js'
 import { db } from './db.js'
-import { subscribeAccount, subscriptionState } from './instagram.js'
+import { applySubscription, subscriptionState } from './instagram.js'
 
 // Verifies that Meta is allowed to deliver comments and messages for this
 // account, and re-applies the subscription when it is missing. Never throws:
@@ -12,7 +12,7 @@ export async function checkAccount(account, { repair = true } = {}) {
   try {
     state = await subscriptionState(account)
     if (!state.subscribed && repair) {
-      state = await subscribeAccount(account)
+      state = await applySubscription(account)
       action = 'resubscribed'
     } else if (!state.subscribed) {
       action = 'missing'
