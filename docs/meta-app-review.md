@@ -108,3 +108,51 @@ Exit code 0 means every machine-checkable item passes. It deliberately fails on
 a Google Safe Browsing flag, because a reviewer who meets the interstitial will
 reject the submission without opening the app.
 
+## Status bukti per 2026-11-16
+
+Yang sudah bisa dipakai sebagai lampiran (bukan klaim, tapi jejak produksi):
+
+| Izin | Bukti |
+| --- | --- |
+| `instagram_manage_comments` | delivery `id 6` (`comment:stored`, HTTP 200), komentar `@trasistydevi` tersimpan, dibalas lewat app → `status=resolved`, `error=''`, balasan terlihat di Instagram |
+| `instagram_basic` | `account_checks` menyimpan `username`, `subscribed=true`, `fields=[comments,messages]`, `token_app_id=1128649916573434` |
+| `instagram_manage_messages` | **belum ada** — DM dari akun non-peran tidak pernah sampai; ini justru alasan pengajuan Advanced Access |
+
+## Pengajuan Advanced Access untuk messaging
+
+`instagram_manage_messages` adalah satu-satunya izin yang tertahan. Urutannya:
+
+1. **Rekam dulu, jangan mengisi form lebih dulu.** Satu rekaman layar 2–3 menit, berbahasa
+   Indonesia dengan teks Inggris di layar bila perlu, isinya berurutan:
+   - 0:00 – 0:20 · buka `jawabin-kc75.vercel.app`, tunjukkan halaman **Akun** dengan
+     `@danubudiarto` terhubung dan baris "Webhook aktif (comments,messages)".
+   - 0:20 – 1:10 · halaman **Komentar**: tunjukkan komentar masuk hari ini dari `@trasistydevi`,
+     tekan balas, kirim, lalu tunjukkan balasan itu muncul di aplikasi Instagram (rekam dari HP
+     atau tunjukkan tangkapan layar di akhir).
+   - 1:10 – 1:50 · halaman **Percakapan** dan halaman **Otomasi**: tunjukkan aturan kata kunci
+     "DM uji halo" (kata `halo` → balas "Halo juga", kanal DM) dan jelaskan bahwa balasan hanya
+     dikirim untuk pesan yang masuk ke akun sendiri, bukan pesan keluar massal.
+   - 1:50 – 2:30 · tunjukkan halaman `/privacy`, `/terms`, `/data-deletion` (yang ditanyakan
+     peninjau untuk aplikasi messaging) dan sebutkan bahwa aplikasi tidak menyimpan password
+     Instagram.
+2. **Isi form** di https://developers.facebook.com/apps/1128649916573434/app-review/permissions/
+   untuk `instagram_manage_messages` (ajukan `instagram_manage_comments` sekaligus supaya tidak
+   dua kali antre). Deskripsi pakai blok Inggris di bagian atas dokumen ini.
+3. **Jujur soal pengujian.** Di kolom catatan untuk peninjau, tulis kalimat ini apa adanya:
+
+   > With Standard Access our tester account can comment and receive replies end to end, but
+   > direct messages from the same tester are never delivered to our webhook, even though the
+   > app-level and account-level subscriptions both report `messages` active. We are applying for
+   > Advanced Access precisely because we cannot demonstrate inbound DMs until it is granted.
+
+   Itu bukan kelemahan pengajuan; itu bukti bahwa kami tahu apa yang sedang diminta.
+4. **Business verification.** Kalau dashboard menandai app belum terverifikasi, selesaikan dulu
+   (dokumen badan usaha/NIB + situs dengan halaman legal). Tanpa itu, antrean messaging biasanya
+   berhenti di tahap awal.
+
+## Setelah Advanced Access disetujui
+
+1. Kirim satu DM dari akun lain → watcher harus melapor `chat`/`messages` bertambah.
+2. Kalau belum, jalankan `GET /api/cron/accounts` (memperbaiki langganan) lalu uji lagi.
+3. Baru setelah itu promosi/otomasi DM untuk pelanggan nyata boleh dinyalakan.
+
