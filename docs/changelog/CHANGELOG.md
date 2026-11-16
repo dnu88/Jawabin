@@ -31,6 +31,9 @@
   `npm run build`: sukses.
 - Migrasi 0008 dan 0009 diterapkan hosted dalam satu transaksi masing-masing; readback: RLS aktif,
   0 policy, `account_checks` 8 kolom, 2 indeks.
+- **Komentar end-to-end:** komentar masuk dari `@trasistydevi` → tersimpan → dibalas dari aplikasi →
+  `resolved` dengan `replied_by=manual` dan `error=''`; balasan terbit ke Instagram. Inbound dan
+  outbound komentar berjalan dengan Standard Access.
 - **Jejak delivery pertama yang asli** tercatat di produksi: komentar dari akun pemilik sendiri
   masuk sebagai `handled`/`own comment` (id 5, 200, tanda tangan valid). Konektivitas webhook dan
   parsing entri terbukti; sisa masalah ada di akun pengirim, bukan di endpoint.

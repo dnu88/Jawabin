@@ -428,6 +428,11 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
 - Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
   "English answers for the review form".
+- **Jalur komentar terbukti end-to-end (2026-11-16 04:50 UTC / 11:50 WIB):** komentar dari
+  `@trasistydevi` pada media akun tersimpan (`comment:stored`, status `pending`), lalu dibalas lewat
+  route aplikasi (`POST /api/comments/:id/reply`) dan tersimpan sebagai `status=resolved`,
+  `replied_by=manual`, `error=''`. Balasan terbit ke Instagram lewat Graph. Artinya inbound +
+  outbound komentar berjalan penuh dengan izin Standard Access; **hanya pesan (DM) yang belum**.
 - **Delivery pertama yang benar-benar masuk (2026-11-16 04:48 UTC):** komentar dari akun pemilik
   sendiri menghasilkan baris `webhook_deliveries` id 5 — `outcome=handled`, `http_status=200`,
   `signature_present=true`, `entries=1`, `detail=comment:own comment`. Jadi jalur Meta → endpoint →
