@@ -404,7 +404,15 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   `app.id`, padahal Meta menjawab `app_id`, sehingga pemeriksaan lama selalu melaporkan "gagal"
   walau langganan terpasang. Kini dicocokkan ke `id` **atau** `app_id`. Alur connect memakai
   fungsi yang sama, jadi bug ini juga bisa memunculkan galat palsu saat menghubungkan akun.
-- Sisa tersangka tinggal kelayakan pengiriman di sisi Meta (Standard Access / Advanced Access).
+- **DM nyata dari `trasistydevi` (2026-11-16) juga tidak menghasilkan satu pun baris** di
+  `webhook_deliveries`, padahal langganan app dan akun terbukti aktif. Jadi Meta memang tidak
+  mengirim event untuk akun ini.
+- Dugaan utama sekarang: **tipe akun Instagram**. Pesan (DM) hanya tersedia untuk akun **Bisnis**;
+  akun **Kreator** bisa punya langganan sempurna dan tetap tidak menerima apa pun. Pemeriksaan
+  otomatis mencoba membaca `account_type` lewat Graph tetapi field itu tidak ada di v27.0 untuk
+  node ini (`(#100) Tried accessing nonexisting field`), jadi tipe akun harus dikonfirmasi pemilik
+  di aplikasi Instagram (Pengaturan → Jenis akun).
+- Sisa tersangka lain: kelayakan pengiriman di sisi Meta (Standard Access / Advanced Access).
   Bukti berikutnya: tombol **Test** pada webhook Instagram di dashboard Meta akan meninggalkan
   baris di `webhook_deliveries` bila Meta memang bisa mencapai endpoint ini.
 

@@ -20,12 +20,20 @@
   dengan pesan yang sudah diredaksi, dan kegagalan menulis riwayat tidak mengubah
   jawaban.
 
+- `server/accounthealth.js` juga membaca tipe akun profesional (`account_type`, dengan fallback
+  `professional_account_type`) dan menyimpannya di `account_checks` (migrasi 0009). Halaman Akun
+  memberi peringatan bila tipenya bukan `BUSINESS`. Pembacaan tipe bersifat best-effort: gagal
+  membaca tipe tidak boleh menghentikan pemeriksaan langganan.
+
 ### Verifikasi
 
-- `npm test`: **221 passed** (18 file). `npx playwright test`: **32 passed**.
+- `npm test`: **222 passed** (18 file). `npx playwright test`: **32 passed**.
   `npm run build`: sukses.
-- Migrasi 0008 diterapkan hosted dalam satu transaksi; readback: RLS aktif, 0 policy,
-  7 kolom, 2 indeks.
+- Migrasi 0008 dan 0009 diterapkan hosted dalam satu transaksi masing-masing; readback: RLS aktif,
+  0 policy, `account_checks` 8 kolom, 2 indeks.
+- Pemeriksaan produksi setelah deploy `839b3af`: `subscribed=true`, `fields=[comments,messages]`,
+  `action=checked`. Field tipe akun tidak tersedia lewat Graph v27.0 di node ini (error 100), jadi
+  tipe akun belum bisa dibaca server-side.
 - `CRON_SECRET` dibuat di environment Production Vercel (encrypted).
 - Pemeriksaan pertama: langganan tingkat akun `danubudiarto` **aktif**
   (`subscribed=true`, `comments,messages`).
