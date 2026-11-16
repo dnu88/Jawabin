@@ -428,6 +428,14 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
 - Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
   "English answers for the review form".
+- **Jalur pesan (DM) terbukti dengan event sintetis bertanda tangan sah (2026-11-16 05:18 UTC):**
+  webhook buatan sendiri (pengirim palsu `999000111222333`, teks `halo`) diterima endpoint,
+  percakapan dibuat (`unread=1`), pesan masuk tersimpan, aturan kata kunci mencocokkan, dan
+  balasan otomatis **mencoba** terkirim lalu gagal dengan alasan yang terlihat di thread:
+  `Instagram error 100/2534014: (#100) The requested user cannot be found.` Itu memang yang
+  diharapkan dari penerima palsu — intinya kegagalan tidak ditelan. Baris uji (chat, 2 pesan,
+  delivery 8) dihapus setelah verifikasi.
+  Kesimpulan: satu-satunya yang belum ada untuk DM adalah **izin Meta**, bukan kode.
 - **Jalur komentar terbukti end-to-end (2026-11-16 04:50 UTC / 11:50 WIB):** komentar dari
   `@trasistydevi` pada media akun tersimpan (`comment:stored`, status `pending`), lalu dibalas lewat
   route aplikasi (`POST /api/comments/:id/reply`) dan tersimpan sebagai `status=resolved`,
