@@ -428,6 +428,10 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
 - Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
   "English answers for the review form".
+- Verifikasi Search Console tidak lagi butuh round-trip: `server/routes/siteverify.js`
+  menjawab `/google<token>.html` dengan baris yang dibaca Google (rewrite di `vercel.json`,
+  pola ketat, nama lain 404). Diuji di produksi `8c8f11b`. Jadi pemilik cukup menambah
+  properti, memilih metode HTML file, dan menekan Verify.
   Bukti berikutnya: tombol **Test** pada webhook Instagram di dashboard Meta akan meninggalkan
   baris di `webhook_deliveries` bila Meta memang bisa mencapai endpoint ini.
 

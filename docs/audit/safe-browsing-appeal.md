@@ -20,10 +20,13 @@ klasifikasinya, dan itu hanya terbaca dari akun Google pemilik.
 
 1. Buka <https://search.google.com/search-console> → **Add property** → pilih
    **URL prefix** → isi `https://jawabin-kc75.vercel.app/`.
-2. Pilih metode verifikasi **HTML file**. Google memberi nama file seperti
-   `google1a2b3c4d5e6f7g8h.html`. **Kirim nama file itu ke agen**; filenya dipasang
-   di `public/` dan di-deploy (2 menit), lalu tekan **Verify**. Metode meta-tag juga
-   bisa, tetapi butuh build ulang `index.html`; file statis lebih cepat.
+2. Pilih metode verifikasi **HTML file**, lalu **tekan Verify**. Tidak perlu mengunduh
+   file, tidak perlu mengirim nama file ke siapa pun: server menjawab setiap permintaan
+   `/google<token>.html` dengan baris yang dibaca Google
+   (`server/routes/siteverify.js` + rewrite di `vercel.json`), jadi verifikasi selesai
+   dalam satu klik. Diuji di produksi: `GET /google1a2b3c4d5e6f7a8b.html` →
+   `200 text/html` berisi `google-site-verification: google1a2b3c4d5e6f7a8b.html`;
+   nama yang tidak cocok pola → `404`.
 3. Setelah properti terverifikasi: menu **Security & Manual Actions → Security issues**.
    Catat jenis temuan dan contoh URL bila ada.
 4. Tekan **Request review** dan tempel teks di bawah (bahasa Inggris; peninjau Google
