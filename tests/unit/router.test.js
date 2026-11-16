@@ -24,6 +24,8 @@ const spies = vi.hoisted(() => {
     },
     accounts: {
       listAccounts: vi.fn(async () => new Response('{"hit":"listAccounts"}')),
+      accountsHealth: vi.fn(async () => new Response('{"hit":"accountsHealth"}')),
+      allAccountsHealth: vi.fn(async () => new Response('{"hit":"allAccountsHealth"}')),
       deleteAccount: vi.fn(async () => new Response('{"hit":"deleteAccount"}')),
       instagramAuthorize: vi.fn(async () => new Response('{"hit":"instagramAuthorize"}')),
       instagramCallback: vi.fn(async () => new Response('{"hit":"instagramCallback"}')),
@@ -99,6 +101,33 @@ describe('public routes', () => {
   it('lets the Instagram callback through without a session', async () => {
     await call('GET', '/api/instagram/callback?code=abc&state=s', { token: null })
     expect(spies.accounts.instagramCallback).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('account health', () => {
+  it('routes /api/accounts/health to the subscription check, not to the :id route', async () => {
+    const response = await call('GET', '/api/accounts/health')
+    expect(await response.json()).toEqual({ hit: 'accountsHealth' })
+    expect(spies.accounts.accountsHealth).toHaveBeenCalledTimes(1)
+    expect(spies.accounts.deleteAccount).not.toHaveBeenCalled()
+  })
+
+  it('refuses the cron endpoint without the Vercel cron secret', async () => {
+    vi.stubEnv('CRON_SECRET', 'cron-secret')
+    const denied = await call('GET', '/api/cron/accounts', { token: null })
+    expect(denied.status).toBe(401)
+    const allowed = await call('GET', '/api/cron/accounts', { token: 'cron-secret' })
+    expect(allowed.status).toBe(200)
+    expect(spies.accounts.allAccountsHealth).toHaveBeenCalledTimes(1)
+    vi.unstubAllEnvs()
+  })
+
+  it('keeps the cron endpoint closed when no secret is configured', async () => {
+    vi.stubEnv('CRON_SECRET', '')
+    const response = await call('GET', '/api/cron/accounts', { token: 'anything' })
+    expect(response.status).toBe(401)
+    expect(spies.accounts.allAccountsHealth).not.toHaveBeenCalled()
+    vi.unstubAllEnvs()
   })
 })
 

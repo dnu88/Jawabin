@@ -1,7 +1,7 @@
 import { HttpError, json } from '../server/http.js'
 import { requireUser } from '../server/db.js'
 import { getAi, getUsage, getUsageSummary, putAi } from '../server/routes/ai.js'
-import { deleteAccount, instagramAuthorize, instagramCallback, listAccounts } from '../server/routes/accounts.js'
+import { accountsHealth, allAccountsHealth, deleteAccount, instagramAuthorize, instagramCallback, listAccounts } from '../server/routes/accounts.js'
 import { getDashboard } from '../server/routes/dashboard.js'
 import { getChat, listChats, sendChatMessage } from '../server/routes/chats.js'
 import { listComments, replyComment, updateComment } from '../server/routes/comments.js'
@@ -24,6 +24,7 @@ const routes = [
   ['GET', 'ai/usage', getUsage],
   ['GET', 'ai/usage/summary', getUsageSummary],
   ['GET', 'accounts', listAccounts],
+  ['GET', 'accounts/health', accountsHealth],
   ['DELETE', 'accounts/:id', deleteAccount, ['account', 'delete']],
   ['GET', 'instagram/authorize', instagramAuthorize],
   ['GET', 'comments', listComments],
@@ -57,6 +58,13 @@ async function handle(request) {
 
   if (path == 'health') return json({ ok: true })
   if (path == 'webhook/meta') return method == 'GET' ? verifyWebhook(url) : receiveWebhook(request)
+  // Vercel cron: verifies and repairs the webhook subscription on every account
+  // without anyone opening the app. Vercel sends `authorization: Bearer $CRON_SECRET`.
+  if (path == 'cron/accounts' && method == 'GET') {
+    const secret = process.env.CRON_SECRET
+    if (!secret || (request.headers.get('authorization') || '') != `Bearer ${secret}`) throw new HttpError(401, 'unauthorized')
+    return allAccountsHealth()
+  }
   if (path == 'instagram/callback' && method == 'GET') {
     await rateLimit(`ip:${clientIp(request)}:callback`, CALLBACK_LIMIT)
     return instagramCallback(url)

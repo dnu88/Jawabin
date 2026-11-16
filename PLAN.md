@@ -390,6 +390,14 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   `handled` dengan `detail=comment:unknown account`. Baris probe sudah dihapus, jadi tabel kosong
   sampai delivery Meta yang sebenarnya datang.
 
+**Pemeriksaan otomatis (ditambahkan)**
+- `GET /api/accounts/health` (dipakai halaman Akun) dan `GET /api/cron/accounts` (cron Vercel
+  harian, `Bearer $CRON_SECRET`) membaca `subscribed_apps` dengan token tersimpan, memasang ulang
+  bila kosong, lalu membaca ulang. Hasilnya tersimpan di `public.account_checks`.
+- Artinya: kalau langganan tingkat akun ternyata kosong, sistem memperbaikinya sendiri dan
+  halaman Akun menampilkan status sebenarnya — bukan tebakan. Kalau pemeriksaan gagal, pesan
+  galat Graph (sudah diredaksi) yang muncul.
+
 **Langkah berikutnya (urut)**
 1. Pemilik: kirim satu DM berisi kata `halo` dari `trasistydevi` ke `@danubudiarto`, catat jamnya.
 2. Baca `select received_at, outcome, http_status, auth_mode, detail from public.webhook_deliveries

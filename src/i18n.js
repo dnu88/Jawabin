@@ -30,6 +30,10 @@ const messages = {
       since: 'Connected {time}', remove: 'Disconnect',
       alert: { title: 'Disconnect this account?', message: 'Comments from @{name} stop coming in, and its stored comments are deleted.' },
       toast: { connected: '@{name} connected', removed: 'Account disconnected' },
+      webhook: {
+        ok: 'Webhook active ({fields})', repaired: 'Webhook re-subscribed ({fields})', missing: 'Webhook not subscribed',
+        failed: 'Webhook check failed: {message}', check: 'Check now',
+      },
     },
     comment: {
       title: 'Comment', hint: 'Comments from your connected accounts',
@@ -117,6 +121,10 @@ const messages = {
       since: 'Terhubung {time}', remove: 'Putuskan',
       alert: { title: 'Putuskan akun ini?', message: 'Komentar dari @{name} berhenti masuk, dan komentar yang tersimpan ikut dihapus.' },
       toast: { connected: '@{name} terhubung', removed: 'Akun diputuskan' },
+      webhook: {
+        ok: 'Webhook aktif ({fields})', repaired: 'Webhook dipasang ulang ({fields})', missing: 'Webhook belum berlangganan',
+        failed: 'Pemeriksaan webhook gagal: {message}', check: 'Periksa lagi',
+      },
     },
     comment: {
       title: 'Komentar', hint: 'Komentar dari akun yang terhubung',

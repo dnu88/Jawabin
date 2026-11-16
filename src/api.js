@@ -478,6 +478,14 @@ export async function getAccounts() {
   return db.accounts.map((account) => ({ ...account }))
 }
 
+// Webhook subscription diagnostics: the server verifies (and repairs) the
+// account-level subscription, so the page can show a real state instead of a
+// guess. Demo mode has nothing to verify.
+export async function getAccountsHealth({ force = false } = {}) {
+  if (!authEnabled) return []
+  return request('GET', `/accounts/health${force ? '?force=1' : ''}`)
+}
+
 export async function removeAccount(id) {
   if (authEnabled) return request('DELETE', `/accounts/${id}`)
   await wait()

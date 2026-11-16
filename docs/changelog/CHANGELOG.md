@@ -1,5 +1,33 @@
 # Changelog
 
+## Belum dirilis — pemeriksaan langganan webhook otomatis
+
+### Perubahan kode
+
+- `GET /api/accounts/health`: memverifikasi langganan webhook tingkat akun
+  (`subscribed_apps`) dengan token tersimpan, **memasang ulang bila kosong**, lalu
+  membaca ulang untuk membuktikannya. Jawaban di-cache 5 menit; `?force=1` memaksa
+  panggilan Graph baru. Halaman Akun menampilkan status itu per akun dan menyediakan
+  tombol "Periksa lagi" saat bermasalah.
+- `GET /api/cron/accounts` (Vercel cron harian, `authorization: Bearer $CRON_SECRET`):
+  jalur yang sama untuk semua akun tanpa perlu membuka aplikasi. Endpoint tertutup
+  bila `CRON_SECRET` tidak diset.
+- Migrasi `0008_account_checks.sql`: riwayat hasil pemeriksaan
+  (`subscribed`, `fields`, `action`, `error`), hanya `service_role`.
+- `server/instagram.js`: `subscriptionState()` dipakai bersama oleh alur connect dan
+  pemeriksaan, sehingga pembacaan ulang langganan hanya punya satu implementasi.
+- Pemeriksaan tidak pernah melempar: kegagalan Graph disimpan sebagai `action=failed`
+  dengan pesan yang sudah diredaksi, dan kegagalan menulis riwayat tidak mengubah
+  jawaban.
+
+### Verifikasi
+
+- `npm test`: **221 passed** (18 file). `npx playwright test`: **32 passed**.
+  `npm run build`: sukses.
+- Migrasi 0008 diterapkan hosted dalam satu transaksi; readback: RLS aktif, 0 policy,
+  7 kolom, 2 indeks.
+- `CRON_SECRET` dibuat di environment Production Vercel (encrypted).
+
 ## Belum dirilis — jejak delivery webhook
 
 ### Perubahan kode

@@ -4,13 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import Page from '../components/Page.vue'
 import { t, formatRelative, formatDate } from '../i18n'
-import { getAccounts, removeAccount, getInstagramAuthorizeUrl } from '../api'
+import { getAccounts, getAccountsHealth, removeAccount, getInstagramAuthorizeUrl } from '../api'
 import { showToast } from '../toast'
 import { confirm } from '../confirm'
 
 const route = useRoute()
 const router = useRouter()
-const state = reactive({ loading: true, connecting: false, docs: [] })
+const state = reactive({ loading: true, connecting: false, checking: false, docs: [], health: {} })
 
 async function load() {
   state.loading = true
@@ -20,6 +20,19 @@ async function load() {
     showToast(error.message, 'error')
   }
   state.loading = false
+}
+
+// The server verifies (and repairs) the account-level webhook subscription, so
+// a silent "Meta never called us" becomes a visible line on this page.
+async function loadHealth(force = false) {
+  state.checking = true
+  try {
+    for (const item of await getAccountsHealth({ force })) state.health[item.accountId] = item
+  } catch (error) {
+    // A failed check must never hide the account list itself.
+    console.error(error)
+  }
+  state.checking = false
 }
 
 async function connect() {
@@ -54,6 +67,7 @@ onMounted(() => {
   if (route.query.error) showToast(String(route.query.error), 'error')
   if (route.query.connected || route.query.error) router.replace({ query: {} })
   load()
+  loadHealth()
 })
 </script>
 
@@ -87,7 +101,26 @@ onMounted(() => {
             <template v-if="doc.name">{{ doc.name }} · </template>
             <span :title="formatDate(doc.createdAt)">{{ t('account.since', { time: formatRelative(doc.createdAt) }) }}</span>
           </div>
+          <div v-if="state.health[doc._id]" class="text-xs line-clamp-2">
+            <span v-if="state.health[doc._id].error" class="text-error">
+              {{ t('account.webhook.failed', { message: state.health[doc._id].error }) }}
+            </span>
+            <span v-else-if="state.health[doc._id].subscribed" class="text-success">
+              {{ t(`account.webhook.${state.health[doc._id].action == 'resubscribed' ? 'repaired' : 'ok'}`, { fields: (state.health[doc._id].fields || []).join(', ') }) }}
+            </span>
+            <span v-else class="text-warning">{{ t('account.webhook.missing') }}</span>
+          </div>
         </div>
+        <button
+          v-if="state.health[doc._id] && (state.health[doc._id].error || !state.health[doc._id].subscribed)"
+          class="btn btn-sm max-sm:btn-square shrink-0"
+          :disabled="state.checking"
+          :title="t('account.webhook.check')"
+          @click="loadHealth(true)"
+        >
+          <span v-if="state.checking" class="loading loading-xs" />
+          <Icon v-else icon="mingcute:refresh-1-line" />
+        </button>
         <button class="btn btn-sm max-sm:btn-square shrink-0 text-error" :title="t('account.remove')" @click="remove(doc)">
           <Icon icon="mingcute:unlink-2-line" />
           <span class="sm:inline hidden">{{ t('account.remove') }}</span>

@@ -2,6 +2,7 @@ import { HttpError, json, redirect } from '../http.js'
 import { db, check } from '../db.js'
 import { readState, signState } from '../crypto.js'
 import { authorizeUrl, connect, loginMode, subscribeAccount } from '../instagram.js'
+import { checkAccounts } from '../accounthealth.js'
 import { logActivity } from '../activity.js'
 
 const accountDoc = (row) => ({
@@ -13,6 +14,21 @@ const callbackUrl = (url) => `${url.origin}/api/instagram/callback`
 export async function listAccounts(user) {
   const rows = check(await db().from('accounts').select('*').eq('user_id', user.id).order('created_at'))
   return json(rows.map(accountDoc))
+}
+
+// Subscription diagnostics for the account page: verifies the account-level
+// webhook subscription, repairs it when it is missing, and answers from the last
+// five minutes unless ?force=1 asks for a fresh Graph call.
+export async function accountsHealth(user, _body, url) {
+  const rows = check(await db().from('accounts').select('*').eq('user_id', user.id).order('created_at'))
+  return json(await checkAccounts(rows, { force: url.searchParams.get('force') == '1' }))
+}
+
+// Scheduled pass over every connected account (Vercel cron, daily on Hobby).
+export async function allAccountsHealth() {
+  const rows = check(await db().from('accounts').select('*'))
+  const results = await checkAccounts(rows, { force: true })
+  return json({ checked: results.length, results })
 }
 
 export async function deleteAccount(user, _body, _url, id) {

@@ -218,17 +218,48 @@ export async function accountToken(account) {
   return storedToken(account)
 }
 
+// Where the account-level webhook subscription lives, and for which app id.
+function subscriptionBase(account) {
+  const unified = authMode(account) === 'unified_login'
+  const node = unified ? account.platform_user_id : 'me'
+  return {
+    appId: env(unified ? 'META_APP_ID' : 'INSTAGRAM_APP_ID'),
+    base: `${graph(account)}/${encodeURIComponent(node)}/subscribed_apps`,
+  }
+}
+
+// Reads which app fields are actually subscribed for this account. Meta sends
+// nothing at all when this readback is empty, so it is the only cheap way to
+// tell "not subscribed" apart from "Meta chose not to deliver".
+async function subscribedApps(base, token, appId) {
+  const readback = await call(base, { headers: bearer(token) })
+  const apps = Array.isArray(readback.data) ? readback.data : []
+  const mine = apps.find((app) => String(app.id) === appId)
+  const fields = Array.isArray(mine?.subscribed_fields) ? mine.subscribed_fields : []
+  return {
+    subscribed: Boolean(mine) && ['comments', 'messages'].every((field) => fields.includes(field)),
+    fields,
+    apps: apps.map((app) => ({ id: String(app.id), fields: Array.isArray(app.subscribed_fields) ? app.subscribed_fields : [] })),
+  }
+}
+
+export async function subscriptionState(account) {
+  const token = await accountToken(account)
+  const { appId, base } = subscriptionBase(account)
+  return { appId, ...(await subscribedApps(base, token, appId)) }
+}
+
+// Subscribes and proves it by reading back; both the connect flow and the
+// scheduled health check use this so a silent half-subscription cannot pass.
 export async function subscribeAccount(account) {
   const token = await accountToken(account)
-  const unified = authMode(account) === 'unified_login'
-  const appId = env(unified ? 'META_APP_ID' : 'INSTAGRAM_APP_ID')
-  const node = unified ? account.platform_user_id : 'me'
-  const base = `${graph(account)}/${encodeURIComponent(node)}/subscribed_apps`
+  const { appId, base } = subscriptionBase(account)
   try {
     const result = await call(`${base}?subscribed_fields=comments,messages`, { method: 'POST', headers: bearer(token) })
     if (result.success !== true) throw new Error('not subscribed')
-    const readback = await call(base, { headers: bearer(token) })
-    if (!Array.isArray(readback.data) || !readback.data.some(app => String(app.id) === appId && ['comments', 'messages'].every(field => app.subscribed_fields?.includes(field)))) throw new Error('not verified')
+    const state = await subscribedApps(base, token, appId)
+    if (!state.subscribed) throw new Error('not verified')
+    return state
   } catch {
     throw new HttpError(400, 'Instagram webhook subscription failed; please connect again')
   }

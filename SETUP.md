@@ -18,6 +18,8 @@ pada migration history; **jangan jalankan ulang hanya karena history kosong**.
   lalu login dan akses API terautentikasi berhasil.
 - Migrasi `0005_instagram_unified_login.sql` **sudah diterapkan** (2026-11-15, dalam transaksi);
   readback katalog: kolom Unified ada, RPC hanya `service_role`, RLS aktif.
+- Migrasi `0008_account_checks.sql` **sudah diterapkan** (2026-11-16): riwayat pemeriksaan langganan
+  per akun (`public.account_checks`, RLS tanpa policy). Dipakai `GET /api/accounts/health` dan cron.
 - Migrasi `0007_webhook_deliveries.sql` **sudah diterapkan** (2026-11-16, satu transaksi; readback: tabel + 2 indeks,
   RLS aktif, 0 policy, hanya `service_role` yang menulis). Tabel ini mencatat setiap POST ke `/api/webhook/meta`
   (lihat bagian "Membaca jejak webhook"), karena log runtime Vercel hanya bertahan sekitar satu jam di plan Hobby.
@@ -45,6 +47,7 @@ Deployment Unified `dpl_97ZN7bB64mHeSJUPGFMC7fRx5ub3` READY (lihat audit).
 | `META_LOGIN_CONFIG_ID=2478745309323339` | Konfigurasi Unified Login yang sudah tersimpan |
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | Tetap simpan bila ada akun/alur legacy Instagram Login |
 | `META_VERIFY_TOKEN` | Rahasia untuk verifikasi callback webhook |
+| `CRON_SECRET` | Rahasia untuk `/api/cron/accounts`; Vercel mengirimkannya sebagai `authorization: Bearer` |
 
 Env Supabase publik dan dua rahasia server Supabase/enkripsi sudah dikonfigurasi pada
 onboarding. `META_APP_ID`, `META_APP_SECRET`, `META_LOGIN_CONFIG_ID`, `INSTAGRAM_LOGIN_MODE=unified`
