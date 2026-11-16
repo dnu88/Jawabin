@@ -33,7 +33,7 @@
   0 policy, `account_checks` 8 kolom, 2 indeks.
 - **DM end-to-end diuji dengan event sintetis bertanda tangan sah:** percakapan dibuat, pesan masuk
   tersimpan, aturan kata kunci jalan, dan kegagalan kirim tercatat jelas di thread
-  (`Instagram error 100/2534014`). Baris uji dihapus setelah verifikasi. Sisa hambatan DM murni izin.
+  (`Instagram error 100/2534014`). Baris uji dihapus setelah verifikasi. Sisa hambatannya murni izin Meta.
 - **Komentar end-to-end:** komentar masuk dari `@trasistydevi` → tersimpan → dibalas dari aplikasi →
   `resolved` dengan `replied_by=manual` dan `error=''`; balasan terbit ke Instagram. Inbound dan
   outbound komentar berjalan dengan Standard Access.
