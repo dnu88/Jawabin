@@ -234,12 +234,14 @@ function subscriptionBase(account) {
 async function subscribedApps(base, token, appId) {
   const readback = await call(base, { headers: bearer(token) })
   const apps = Array.isArray(readback.data) ? readback.data : []
-  const mine = apps.find((app) => String(app.id) === appId)
+  // Meta has answered with `id` on some versions and `app_id` on others.
+  const mine = apps.find((app) => String(app.id ?? app.app_id ?? '') === appId)
   const fields = Array.isArray(mine?.subscribed_fields) ? mine.subscribed_fields : []
   return {
     subscribed: Boolean(mine) && ['comments', 'messages'].every((field) => fields.includes(field)),
     fields,
-    apps: apps.map((app) => ({ id: String(app.id), fields: Array.isArray(app.subscribed_fields) ? app.subscribed_fields : [] })),
+    apps: apps.map((app) => ({ id: String(app.id ?? app.app_id ?? ''), fields: Array.isArray(app.subscribed_fields) ? app.subscribed_fields : [] })),
+    raw: apps,
   }
 }
 
@@ -261,7 +263,7 @@ export async function applySubscription(account) {
     // The readback is what proves the subscription, so the failure names the
     // app ids Meta returned: an empty list and a list under another app id mean
     // completely different things.
-    const seen = state.apps.map((app) => `${app.id}:${app.fields.join('|') || 'no fields'}`).join('; ') || 'none'
+    const seen = JSON.stringify(state.raw).slice(0, 280)
     throw new HttpError(400, `subscription not applied (success=${result.success === true}, expected app ${appId}, got ${seen})`)
   }
   return state
