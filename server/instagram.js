@@ -258,7 +258,11 @@ export async function applySubscription(account) {
   const result = await call(`${base}?subscribed_fields=comments,messages`, { method: 'POST', headers: bearer(token) })
   const state = await subscribedApps(base, token, appId)
   if (result.success !== true || !state.subscribed) {
-    throw new HttpError(400, `subscription not applied (success=${result.success === true}, fields=${state.fields.join(',') || 'none'})`)
+    // The readback is what proves the subscription, so the failure names the
+    // app ids Meta returned: an empty list and a list under another app id mean
+    // completely different things.
+    const seen = state.apps.map((app) => `${app.id}:${app.fields.join('|') || 'no fields'}`).join('; ') || 'none'
+    throw new HttpError(400, `subscription not applied (success=${result.success === true}, expected app ${appId}, got ${seen})`)
   }
   return state
 }
