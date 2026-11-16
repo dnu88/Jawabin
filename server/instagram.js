@@ -252,8 +252,21 @@ export async function accountProfile(account) {
   const token = await accountToken(account)
   const unified = authMode(account) === 'unified_login'
   const node = unified ? account.platform_user_id : 'me'
-  const data = await call(`${graph(account)}/${encodeURIComponent(node)}?fields=username,account_type`, { headers: bearer(token) })
-  return { username: typeof data.username === 'string' ? data.username : '', accountType: typeof data.account_type === 'string' ? data.account_type : '' }
+  // Meta has moved this field around between versions; ask narrowly and keep the
+  // first answer that exists instead of failing the whole check on a field name.
+  let last
+  for (const fields of ['username,account_type', 'username,professional_account_type', 'username']) {
+    try {
+      const data = await call(`${graph(account)}/${encodeURIComponent(node)}?fields=${fields}`, { headers: bearer(token) })
+      return {
+        username: typeof data.username === 'string' ? data.username : '',
+        accountType: typeof data.account_type === 'string' ? data.account_type : typeof data.professional_account_type === 'string' ? data.professional_account_type : '',
+      }
+    } catch (error) {
+      last = error
+    }
+  }
+  throw last
 }
 
 export async function subscriptionState(account) {

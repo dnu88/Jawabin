@@ -11,9 +11,12 @@ export async function checkAccount(account, { repair = true } = {}) {
   let action = 'checked'
   let error = null
   try {
-    // Read the account type first: without it, a Creator account looks exactly
-    // like a broken subscription.
-    profile = await accountProfile(account)
+    // Best effort: the account type explains a silent inbox, but a read failure
+    // must not stop the subscription check that actually repairs things.
+    profile = await accountProfile(account).catch((failure) => {
+      console.error('account profile unreadable', failure.message)
+      return null
+    })
     state = await subscriptionState(account)
     if (!state.subscribed && repair) {
       state = await applySubscription(account)
