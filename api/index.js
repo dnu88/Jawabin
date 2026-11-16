@@ -55,7 +55,9 @@ function match(pattern, path) {
 async function handle(request) {
   const url = new URL(request.url)
   const path = (url.searchParams.get('__path') ?? url.pathname.replace(/^\/api\/?/, '')).replace(/^\/+|\/+$/g, '')
-  const method = request.method
+  // A HEAD probe must not answer 405: crawlers and verification services ask for
+  // the headers first, and a 405 reads like a broken route.
+  const method = request.method == 'HEAD' ? 'GET' : request.method
 
   if (path == 'health') return json({ ok: true })
   // Search Console ownership check: answered from the token in the URL itself.
@@ -104,6 +106,7 @@ async function entry(request) {
 }
 
 export const GET = entry
+export const HEAD = entry
 export const POST = entry
 export const PUT = entry
 export const DELETE = entry
