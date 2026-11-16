@@ -31,6 +31,9 @@
   `npm run build`: sukses.
 - Migrasi 0008 dan 0009 diterapkan hosted dalam satu transaksi masing-masing; readback: RLS aktif,
   0 policy, `account_checks` 8 kolom, 2 indeks.
+- **Jejak delivery pertama yang asli** tercatat di produksi: komentar dari akun pemilik sendiri
+  masuk sebagai `handled`/`own comment` (id 5, 200, tanda tangan valid). Konektivitas webhook dan
+  parsing entri terbukti; sisa masalah ada di akun pengirim, bukan di endpoint.
 - Setelah akun diubah ke Bisnis dan dihubungkan ulang, DM uji tetap menghasilkan 0 baris di
   `webhook_deliveries`; kesimpulan: kewenangan pengiriman Meta (Advanced Access/App Review).
 - Temuan produk: reconnect membuat baris `accounts` baru dan aturan lama terhapus lewat cascade;

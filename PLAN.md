@@ -428,6 +428,11 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
   gagal adalah Safe Browsing (domain masih ditandai), yang justru menghalangi peninjau membuka app.
 - Jawaban formulir versi Inggris (siap salin) ada di `docs/meta-app-review.md` bagian
   "English answers for the review form".
+- **Delivery pertama yang benar-benar masuk (2026-11-16 04:48 UTC):** komentar dari akun pemilik
+  sendiri menghasilkan baris `webhook_deliveries` id 5 — `outcome=handled`, `http_status=200`,
+  `signature_present=true`, `entries=1`, `detail=comment:own comment`. Jadi jalur Meta → endpoint →
+  verifikasi tanda tangan → parsing entri → pencocokan akun **terbukti hidup** di produksi.
+  Konsekuensinya: penyebab "nol delivery" bukan konektivitas, melainkan akun **pengirim**.
 - **Introspeksi token (2026-11-16):** `debug_token` menjawab `app_id=1128649916573434` — app yang
   sama dengan pemilik callback — `is_valid=true`, dan scope lengkap
   (`instagram_basic`, `instagram_manage_comments`, `instagram_manage_messages`, `public_profile`).
