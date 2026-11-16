@@ -138,3 +138,17 @@ Konsekuensi: penyebab yang bisa dibuktikan dari luar hanyalah langganan tingkat 
 dalam satu transaksi; readback: tabel ada, RLS aktif, 0 policy, 12 kolom, 2 indeks.
 Uji tulis+baca dengan `service_role` berhasil, `anon` membaca `[]`, dan baris uji dihapus.
 
+### Pemeriksaan langganan tingkat akun (2026-11-16, otomatis)
+
+`GET /api/cron/accounts` (Bearer `CRON_SECRET`) membaca `subscribed_apps` dengan token tersimpan:
+
+| Waktu | Hasil |
+| --- | --- |
+| pemeriksaan pertama | `subscribed=false` karena pembacaan ulang mencocokkan `app.id` sementara Meta menjawab `app_id` — **bug verifikasi**, bukan langganan hilang |
+| setelah perbaikan pencocokan | `subscribed=true`, `fields=[comments,messages]`, `action=checked` |
+
+Kesimpulan: langganan app dan langganan akun dua-duanya benar. Penyebab inbound tidak masuk
+berada di luar yang bisa dibaca dengan token: kelayakan pengiriman di sisi Meta
+(Standard/Advanced Access). Bukti lanjutan yang objektif: tombol **Test** di dashboard webhook
+Instagram harus meninggalkan baris di `public.webhook_deliveries`.
+

@@ -397,6 +397,16 @@ Titik berhenti agen sebelumnya, supaya agen atau orang berikutnya tidak mengulan
 - Artinya: kalau langganan tingkat akun ternyata kosong, sistem memperbaikinya sendiri dan
   halaman Akun menampilkan status sebenarnya — bukan tebakan. Kalau pemeriksaan gagal, pesan
   galat Graph (sudah diredaksi) yang muncul.
+- **Hasil pemeriksaan pertama (2026-11-16):** langganan tingkat akun **aktif** —
+  `subscribed=true`, `fields=[comments,messages]`, `action=checked`. Jadi langganan app dan
+  langganan akun dua-duanya benar; penyebab inbound tidak masuk bukan di situ.
+- **Bug verifikasi yang ditemukan sambil jalan:** pembacaan ulang `subscribed_apps` mencocokkan
+  `app.id`, padahal Meta menjawab `app_id`, sehingga pemeriksaan lama selalu melaporkan "gagal"
+  walau langganan terpasang. Kini dicocokkan ke `id` **atau** `app_id`. Alur connect memakai
+  fungsi yang sama, jadi bug ini juga bisa memunculkan galat palsu saat menghubungkan akun.
+- Sisa tersangka tinggal kelayakan pengiriman di sisi Meta (Standard Access / Advanced Access).
+  Bukti berikutnya: tombol **Test** pada webhook Instagram di dashboard Meta akan meninggalkan
+  baris di `webhook_deliveries` bila Meta memang bisa mencapai endpoint ini.
 
 **Langkah berikutnya (urut)**
 1. Pemilik: kirim satu DM berisi kata `halo` dari `trasistydevi` ke `@danubudiarto`, catat jamnya.

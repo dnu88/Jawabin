@@ -27,6 +27,12 @@
 - Migrasi 0008 diterapkan hosted dalam satu transaksi; readback: RLS aktif, 0 policy,
   7 kolom, 2 indeks.
 - `CRON_SECRET` dibuat di environment Production Vercel (encrypted).
+- Pemeriksaan pertama: langganan tingkat akun `danubudiarto` **aktif**
+  (`subscribed=true`, `comments,messages`).
+- Bug yang ketahuan dari pemeriksaan itu: pembacaan ulang `subscribed_apps` mencocokkan `app.id`
+  sementara Meta mengirim `app_id`, sehingga langganan yang sehat selalu dilaporkan gagal
+  (alur connect memakai pembacaan yang sama). Kini menerima `id` maupun `app_id`, dan pesan
+  gagal menyertakan bentuk mentah jawaban Meta agar tidak ada lagi tebakan.
 
 ## Belum dirilis — jejak delivery webhook
 
