@@ -57,6 +57,14 @@ export async function signOut() {
   session.value = null
 }
 
+export async function saveAuthenticatedName(name) {
+  const id = session.value?.user.id
+  if (!id) throw new Error('No active session')
+  const row = unwrap(await supabase.from('profiles').update({ name }).eq('id', id).select('name').single())
+  if (session.value?.user.id !== id) throw new Error('Session changed')
+  user.name = row.name
+}
+
 export async function updatePassword(password) {
   unwrap(await supabase.auth.updateUser({ password }))
 }

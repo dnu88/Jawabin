@@ -5,6 +5,7 @@ import id from './locales/id.json'
 const messages = {
   en: {
     ...en,
+    displayName: { label: 'Display name', save: 'Save name', saved: 'Display name saved', invalid: 'Enter a name of 1–80 characters.' },
     feature: {
       menu: {
         dashboard: 'Dashboard', assistant: 'AI Assistant', report: 'Report', comment: 'Comment',
@@ -97,6 +98,7 @@ const messages = {
   },
   id: {
     ...id,
+    displayName: { label: 'Nama tampilan', save: 'Simpan nama', saved: 'Nama tampilan disimpan', invalid: 'Masukkan nama sepanjang 1–80 karakter.' },
     feature: {
       menu: {
         dashboard: 'Dashboard', assistant: 'Asisten AI', report: 'Laporan', comment: 'Komentar',

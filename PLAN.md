@@ -92,7 +92,7 @@ vercel.json               Rewrite /api/(.*) → /api/index?__path=$1, sisanya ke
 
 **B. Tampilan saja, data tiruan walaupun sudah login**
 
-Profil (selain ganti password), Sesi, 2FA, Transaksi, API Publik, Developer, Webhook keluar,
+Profil (selain nama tampilan, ganti password, dan hapus akun), Sesi, 2FA, Transaksi, API Publik, Developer, Webhook keluar,
 Key TikWM, Redeem, Aplikasi Terhubung. Semuanya di `src/pages/setting/`, datanya dari fungsi mock di `src/api.js`.
 
 **C. Belum ditulis** (rute jatuh ke `pages/Placeholder.vue`)
@@ -308,8 +308,9 @@ memakai Chromium yang diunduh.
 Urutan menurut manfaat:
 
 1. **Notifikasi** — **selesai di kode, penyimpanan belum diuji hosted.** Skema 0004 sudah diterapkan. Kolom `profiles.notification`
-   (migrasi 0004), rute `GET /profile` dan `PUT /profile/notification`. **Nama profil belum**: halaman Profil
-   belum punya form ubah nama.
+   (migrasi 0004), rute `GET /profile` dan `PUT /profile/notification`. **Nama profil selesai lokal**: form Profil menyimpan `profiles.name` lewat sesi pengguna dan RLS
+   yang sudah ada. Mode demo menyimpan nama di browser. [Bukti dan batas pengujian](docs/audit/profile-name.md).
+   Selesai di hosted bila nama baru tetap tampil setelah login ulang; belum diuji di hosted.
 2. **Log Aktivitas** — **selesai di kode, perilaku belum diuji hosted.** Tabel `activities` (migrasi 0004 sudah diterapkan).
    `api/index.js` mencatat setiap rute yang punya elemen keempat `[modul, aksi]`, berhasil maupun gagal;
    `logActivity` tidak pernah melempar error. Tes: `tests/unit/activity.test.js` dan blok "activity log" di

@@ -4,7 +4,7 @@
 //   GET /ai/usage           -> getUsage
 // State lives in localStorage so the page behaves end to end without a server.
 import { reactive } from 'vue'
-import { authEnabled, updatePassword } from './auth'
+import { authEnabled, saveAuthenticatedName, updatePassword } from './auth'
 import { request } from './server'
 
 const KEY = 'jawabin-mock'
@@ -196,7 +196,7 @@ function snapshot() {
 }
 
 export const user = reactive({
-  name: 'Pengguna Demo',
+  name: db.name || 'Pengguna Demo',
   email: 'demo@example.com',
   plan: db.plan,
   expiredAt: db.expiredAt,
@@ -217,6 +217,17 @@ function paginate(list, page = 1, limit = 20) {
   const totalPages = Math.max(1, Math.ceil(list.length / limit))
   const current = Math.min(page, totalPages)
   return { data: { docs: list.slice((current - 1) * limit, current * limit).map((doc) => ({ ...doc })), page: current, totalPages } }
+}
+
+export const PROFILE_NAME_LIMIT = 80
+
+export async function updateProfileName(value) {
+  const name = typeof value === 'string' ? value.trim() : ''
+  if (!name || name.length > PROFILE_NAME_LIMIT) throw new Error('Invalid profile name')
+  if (authEnabled) return saveAuthenticatedName(name)
+  db.name = name
+  persist()
+  user.name = name
 }
 
 export async function updateNotification(values) {

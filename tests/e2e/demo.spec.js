@@ -40,6 +40,18 @@ function watchConsole(page) {
 }
 
 test.describe('demo mode', () => {
+  test.beforeEach(async ({ page }) => {
+    // Use system fonts instead of a remote stylesheet with WOFF2 URLs.
+    await page.route('https://fonts.googleapis.com/css2?**', route =>
+      route.fulfill({ contentType: 'text/css', body: '/* System fonts */' }))
+    // Keep Iconify parsing and rendering real; only replace its two CDN endpoints.
+    await page.route(/^https:\/\/api2?\.iconify\.design\/mingcute\.json\?icons=/, route => {
+      const names = new URL(route.request().url()).searchParams.get('icons').split(',')
+      const icons = Object.fromEntries(names.map(name => [name, { body: '<circle cx="12" cy="12" r="8" fill="currentColor"/>' }]))
+      return route.fulfill({ json: { prefix: 'mingcute', width: 24, height: 24, icons } })
+    })
+  })
+
   for (const route of routes) {
     test(`${route} renders without console errors`, async ({ page }) => {
       const errors = watchConsole(page)
@@ -50,6 +62,22 @@ test.describe('demo mode', () => {
       expect(errors).toEqual([])
     })
   }
+
+  test('profile name rejects blanks and survives a reload', async ({ page }) => {
+
+    await page.goto('/user/setting/profile')
+    const input = page.getByLabel(/nama tampilan|display name/i)
+    const save = page.getByRole('button', { name: /simpan nama|save name/i })
+    await input.fill('   ')
+    await save.click()
+    await expect(page.getByRole('alert')).toContainText('1–80')
+    await input.fill('  Toko Lokal  ')
+    await save.click()
+    await expect(input).toHaveValue('Toko Lokal')
+    await page.reload()
+    await expect(input).toHaveValue('Toko Lokal')
+    await expect(save).toBeDisabled()
+  })
 
   test('the sidebar navigates between pages', async ({ page }) => {
     await page.goto('/user/setting/ai')

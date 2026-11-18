@@ -6,7 +6,7 @@ import Section from '../../components/Section.vue'
 import UiModal from '../../components/UiModal.vue'
 import { t, formatDay, formatNumber } from '../../i18n'
 import { useRouter } from 'vue-router'
-import { user, sendPhoneCode, verifyPhoneCode, changePassword, deleteAccountData } from '../../api'
+import { user, updateProfileName, PROFILE_NAME_LIMIT, sendPhoneCode, verifyPhoneCode, changePassword, deleteAccountData } from '../../api'
 import { authEnabled, forgetSession } from '../../auth'
 import { showToast } from '../../toast'
 
@@ -17,6 +17,32 @@ const countries = [
   { name: 'India (+91)', value: '91' }, { name: 'Australia (+61)', value: '61' }, { name: 'United Kingdom (+44)', value: '44' },
   { name: 'United States (+1)', value: '1' },
 ]
+
+const nameDraft = ref(null)
+const savingName = ref(false)
+const nameError = ref('')
+const displayName = computed({
+  get: () => nameDraft.value ?? user.name,
+  set: value => { nameDraft.value = value; nameError.value = '' },
+})
+async function saveName() {
+  if (savingName.value) return
+  const name = displayName.value.trim()
+  if (!name || name.length > PROFILE_NAME_LIMIT) {
+    nameError.value = t('displayName.invalid')
+    return
+  }
+  savingName.value = true
+  try {
+    await updateProfileName(name)
+    nameDraft.value = null
+    showToast(t('displayName.saved'), 'success')
+  } catch (error) {
+    nameError.value = error.message
+  } finally {
+    savingName.value = false
+  }
+}
 
 const showVerify = ref(false)
 const verify = reactive({ loading: false, step: 'phone', country: '62', phone: '', code: '', error: '' })
@@ -117,6 +143,12 @@ const addonRows = computed(() => [
           <div class="text-xs text-base-content/50 mt-0.5">{{ t('profile.emailHint') }}</div>
         </div>
       </div>
+      <form class="w-full flex flex-col items-start gap-2" @submit.prevent="saveName">
+        <label for="profile-name" class="text-sm font-medium">{{ t('displayName.label') }}</label>
+        <input id="profile-name" v-model="displayName" class="input w-full" autocomplete="name" :maxlength="PROFILE_NAME_LIMIT" :disabled="savingName" />
+        <span v-if="nameError" class="text-xs text-error" role="alert">{{ nameError }}</span>
+        <button class="btn btn-sm btn-primary" :disabled="savingName || displayName === user.name">{{ t('displayName.save') }}</button>
+      </form>
     </Section>
 
     <Section icon="mingcute:phone-line" :title="t('profile.section.phoneNumber')" :description="user.phone ? '' : t('profile.section.alert')">

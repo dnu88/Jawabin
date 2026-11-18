@@ -1,5 +1,9 @@
 # Changelog
 
+## Belum dirilis — nama tampilan profil
+
+Pengguna dapat mengganti nama di Pengaturan → Profil tanpa mengubah email login. Nama demo bertahan setelah reload. Tidak ada migrasi atau izin baru; [verifikasi lokal](../audit/profile-name.md).
+
 ## Belum dirilis — pemeriksaan langganan webhook otomatis
 
 ### Perubahan kode
