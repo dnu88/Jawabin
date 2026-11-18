@@ -40,7 +40,8 @@ function fakeClient({ account = { id: 'acc-1', user_id: 'user-1', platform: 'ins
       insert: (rows) => {
         if (table == 'webhook_deliveries') {
           state.deliveries.push(rows)
-          if (state.deliveryError) throw state.deliveryError
+          if (state.deliveryError instanceof Error) throw state.deliveryError
+          return { error: state.deliveryError }
         } else state.inserts.push({ table, rows })
         return query
       },
@@ -401,13 +402,31 @@ describe('delivery audit', () => {
     spy.mockRestore()
   })
 
-  it('still answers Meta when the audit row itself cannot be written', async () => {
+  it('emits only a runtime receipt before attempting to read the body', async () => {
+    const receipt = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const request = signedPost(payload())
+    vi.spyOn(request, 'text').mockImplementation(async () => {
+      expect(receipt.mock.calls).toEqual([['webhook/meta received']])
+      throw new Error('body unavailable')
+    })
+    try {
+      await expect(receiveWebhook(request)).rejects.toThrow('body unavailable')
+      expect(state.deliveries).toHaveLength(0)
+    } finally { receipt.mockRestore() }
+  })
+
+  it.each([
+    ['resolved', { code: 'test', message: 'private DB detail' }],
+    ['thrown', new Error('private DB detail')],
+  ])('preserves the outcome and logs only a safe diagnostic for a %s insert error', async (_, error) => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    state.deliveryError = new Error('relation "webhook_deliveries" does not exist')
-    const response = await receiveWebhook(signedPost(payload()))
-    expect(response.status).toBe(200)
-    expect(commentWrites()).toHaveLength(1)
-    expect(spy.mock.calls[0][0]).toBe('webhook delivery not recorded')
-    spy.mockRestore()
+    state.deliveryError = error
+    try {
+      const response = await receiveWebhook(signedPost(payload()))
+      expect(response.status).toBe(200)
+      expect(commentWrites()).toHaveLength(1)
+      expect(state.deliveries).toHaveLength(1)
+      expect(spy.mock.calls).toEqual([['webhook delivery not recorded']])
+    } finally { spy.mockRestore() }
   })
 })

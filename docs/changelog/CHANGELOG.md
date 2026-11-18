@@ -1,5 +1,9 @@
 # Changelog
 
+## Belum dirilis — diagnostik webhook
+
+Log runtime kini menandai saat handler menerima permintaan, sebelum membaca body. Kegagalan menulis hasil audit dilaporkan tanpa rincian database; tidak ada baris tambahan, perubahan status HTTP, atau perubahan parser DM.
+
 ## Kesiapan rilis — pengaturan produksi dan bukti review
 
 - URL langsung ke sembilan pengaturan demo tidak lagi menampilkan kontrol semu saat Supabase aktif. Mode demo tetap tersedia. Bukti: `docs/audit/production-routes.md`.

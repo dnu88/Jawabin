@@ -5,6 +5,8 @@ Status rilis: komentar dan balasan manual terbukti di Instagram; DM nyata dan ba
 Dokumen serah-terima untuk siapa pun (orang atau agen) yang meneruskan proyek ini.
 Langkah setting platform ada di [`SETUP.md`](SETUP.md); dokumen ini tidak mengulangnya.
 
+Diagnostik webhook (lokal, belum dirilis): log masuk handler dipisahkan dari hasil di `webhook_deliveries`. Selesai untuk DM nyata bila pengiriman dari akun lain dapat dicocokkan dengan hasil penyimpanan pesan, bukan hanya log masuk. Lihat [audit](docs/audit/unified-login-migration.md#webhook-handler-receipt).
+
 ## Ringkasan
 
 Jawabin adalah aplikasi web untuk mengelola dan membalas komentar media sosial secara otomatis.

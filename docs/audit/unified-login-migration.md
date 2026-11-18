@@ -1,5 +1,14 @@
 # Audit migrasi Unified Login
 
+## Webhook handler receipt
+
+Pada `b86dfef`, `recordDelivery` tidak memeriksa `error` pada hasil insert Supabase; penolakan insert dapat gagal tanpa log. Perbaikan lokal membedakan dua bukti:
+
+- `webhook/meta received` adalah penanda runtime konstan sebelum body dibaca, tanpa data request dan tanpa insert. Penanda ini tidak membuktikan asal Meta, jenis event, atau penyimpanan.
+- `webhook_deliveries` tetap mencatat hasil pemrosesan bila insert berhasil. Penolakan insert (hasil `error` maupun exception) menghasilkan `webhook delivery not recorded`, tanpa isi error dan tanpa mengubah respons webhook. Kegagalan pembersihan baris lama dilaporkan terpisah.
+
+Verifikasi lokal: tiga kasus regresi gagal sebelum perbaikan; sesudahnya seluruh 233 tes unit lulus. Tidak ada deployment. Penyebab DM nyata yang tidak tercatat sebelumnya tetap belum diketahui.
+
 ## Ruang lingkup dan sumber bukti
 
 Baseline kerja `6d2b7ab`; catatan ini menggabungkan bukti onboarding yang disampaikan

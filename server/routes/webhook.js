@@ -60,6 +60,8 @@ async function handleMessage(igUserId, value, modes) {
 }
 
 export async function receiveWebhook(request) {
+  // Handler entry, not proof of Meta origin or successful processing.
+  console.info('webhook/meta received')
   const raw = await request.text()
   const signature = /^sha256=([a-f0-9]{64})$/.exec(request.headers.get('x-hub-signature-256') || '')?.[1]
   // During migration both app families can deliver to this endpoint. Verify
