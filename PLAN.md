@@ -1,5 +1,7 @@
 # Jawabin — kondisi sekarang dan rencana lanjutan
 
+Status rilis: komentar dan balasan manual terbukti di Instagram; DM nyata dan balasan DM belum terbukti. Hasil probe HTTP tidak menggantikan verifikasi browser, akun reviewer, atau persetujuan Meta. Lihat `docs/meta-app-review.md`. Sembilan halaman pengaturan demo kini tidak tersedia lewat URL langsung di mode Supabase; ini bukan implementasi 2FA atau sesi produksi.
+
 Dokumen serah-terima untuk siapa pun (orang atau agen) yang meneruskan proyek ini.
 Langkah setting platform ada di [`SETUP.md`](SETUP.md); dokumen ini tidak mengulangnya.
 

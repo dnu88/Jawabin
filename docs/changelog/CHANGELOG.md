@@ -1,5 +1,10 @@
 # Changelog
 
+## Kesiapan rilis — pengaturan produksi dan bukti review
+
+- URL langsung ke sembilan pengaturan demo tidak lagi menampilkan kontrol semu saat Supabase aktif. Mode demo tetap tersedia. Bukti: `docs/audit/production-routes.md`.
+- Pemeriksaan publik memvalidasi JSON health dan membedakan HTTP 200 dari halaman yang benar-benar tampil. Ringkasan untuk reviewer memisahkan komentar nyata dari DM sintetis. `CLAUDE.md` tidak diubah tanpa persetujuan pemilik.
+
 ## Belum dirilis — nama tampilan profil
 
 Pengguna dapat mengganti nama di Pengaturan → Profil tanpa mengubah email login. Nama demo bertahan setelah reload. Tidak ada migrasi atau izin baru; [verifikasi lokal](../audit/profile-name.md).

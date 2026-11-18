@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { settingItems } from './menu'
+import { visibleSettingItems } from './menu'
 import { authEnabled, authReady, session } from './auth'
 
 const Placeholder = () => import('./pages/Placeholder.vue')
@@ -20,7 +20,8 @@ const settingPages = {
   connected_app: () => import('./pages/setting/ConnectedApp.vue'),
 }
 
-const settingChildren = settingItems.map((item) => ({
+// Omitted demo pages fall through to the localized /user placeholder, even on deep links.
+const settingChildren = visibleSettingItems(authEnabled).map((item) => ({
   path: item.path.replace('/user/setting/', ''),
   name: `user-setting-${item.key}`,
   component: settingPages[item.key],
